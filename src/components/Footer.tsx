@@ -206,7 +206,7 @@ export default function Footer() {
             href="https://zorvent.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="group zorvent-float relative flex flex-col items-center justify-center p-10 md:p-12 rounded-[2rem] max-w-sm w-full cursor-pointer overflow-hidden"
+            className="group zorvent-float relative flex flex-col items-center justify-center px-8 py-10 rounded-[2rem] max-w-sm w-full cursor-pointer overflow-hidden"
             style={{ isolation: "isolate", background: "#040407" }}
           >
 
@@ -275,7 +275,7 @@ export default function Footer() {
 
               {/* THE BIG NAME */}
               <span
-                className="zorvent-shimmer text-6xl md:text-7xl font-heading font-black tracking-[0.22em] uppercase"
+                className="zorvent-shimmer text-5xl md:text-6xl font-heading font-black tracking-[0.15em] uppercase"
               >
                 ZORVENT
               </span>

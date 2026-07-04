@@ -1,10 +1,5 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
 
 interface CachedConnection {
   conn: typeof mongoose | null;
@@ -25,6 +20,12 @@ if (!global.mongooseCache) {
 }
 
 export async function connect(): Promise<typeof mongoose> {
+  const MONGODB_URI = process.env.MONGODB_URI;
+
+  if (!MONGODB_URI) {
+    throw new Error('Please define the MONGODB_URI environment variable');
+  }
+
   if (global.isMongoUnavailable) {
     throw new Error('MongoDB is marked as unavailable. Using local JSON DB.');
   }
@@ -36,7 +37,7 @@ export async function connect(): Promise<typeof mongoose> {
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 2000, // 2 seconds fast connection timeout
+      serverSelectionTimeoutMS: 2000,
     });
   }
 
@@ -45,7 +46,7 @@ export async function connect(): Promise<typeof mongoose> {
     global.isMongoUnavailable = false;
   } catch (e) {
     cached.promise = null;
-    global.isMongoUnavailable = true; // Flag MongoDB as down to avoid hanging later
+    global.isMongoUnavailable = true;
     throw e;
   }
 
