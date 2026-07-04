@@ -183,21 +183,15 @@ export default function Header({ transparent = false }: { transparent?: boolean 
                 </div>
                 {/* Nav links */}
                 <div className="flex flex-col gap-0.5">
-                  {NAV_LINKS.map((link, i) => (
-                    <motion.div
+                  {NAV_LINKS.map((link) => (
+                    <Link
                       key={link.href}
-                      initial={{ opacity: 0, x: 24 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.05 + i * 0.05 }}
+                      href={link.href}
+                      onClick={closeMobile}
+                      className="flex items-center py-4 text-[#0A0E27] hover:text-accent text-base font-bold transition-colors border-b border-gray-100 active:bg-accent/5 active:text-accent touch-manipulation"
                     >
-                      <Link
-                        href={link.href}
-                        onClick={closeMobile}
-                        className="flex items-center py-3.5 text-primary hover:text-accent text-base font-bold transition-colors border-b border-gray-100 active:bg-accent/5 touch-manipulation"
-                      >
-                        {link.label}
-                      </Link>
-                    </motion.div>
+                      {link.label}
+                    </Link>
                   ))}
                 </div>
                 <div className="mt-auto pt-8 space-y-6">
