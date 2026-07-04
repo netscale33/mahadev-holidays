@@ -304,3 +304,10 @@ html {
 
 .scan-sweep { animation: scan-line 2.5s linear infinite; }
 
+/* ── Mobile Utilities ───────────────────────────────────────────── */
+
+/* Hide scrollbar but keep scrolling */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+

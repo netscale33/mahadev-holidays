@@ -492,7 +492,7 @@ export default function Home() {
             duration: d.duration,
             type: d.type || (d.category === "international" ? "Luxury" : "Nature"),
             category: String(d.category).toLowerCase() === "international" ? "International" : "Domestic",
-            href: `/destinations/${d.slug}`
+            href: d.slug ? `/destinations/${d.slug}` : `/destinations`
           }));
           setDestinations(formatted);
           return;

@@ -121,7 +121,7 @@ export default function ContactPage() {
       <ScrollToTop />
 
       {/* Hero with Map Background */}
-      <section className="relative pt-44 pb-32 overflow-hidden flex items-center min-h-[50vh]">
+      <section className="relative pt-32 md:pt-44 pb-20 md:pb-32 overflow-hidden flex items-center min-h-[45vh]">
         <div className="absolute inset-0 z-0">
           <Image
             src="https://images.unsplash.com/photo-1569336415962-a4bd9f609cd0?w=1920&q=80"
@@ -137,12 +137,12 @@ export default function ContactPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="inline-block bg-white/95 backdrop-blur-md border border-white/50 shadow-2xl p-8 md:p-10 rounded-3xl max-w-3xl mx-auto"
+            className="inline-block bg-white/95 backdrop-blur-md border border-white/50 shadow-2xl p-6 md:p-10 rounded-3xl max-w-3xl mx-auto w-full"
           >
             <span className="inline-block px-4 py-1.5 border border-accent/30 bg-accent/5 rounded-full text-accent text-xs font-bold tracking-[0.25em] uppercase mb-5">
               Get in Touch
             </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-primary leading-tight mb-4">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-primary leading-tight mb-4">
               Plan Your Dream Journey
             </h1>
             <p className="text-primary-800 text-sm md:text-base max-w-xl mx-auto font-medium leading-relaxed">

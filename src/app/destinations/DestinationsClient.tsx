@@ -181,7 +181,7 @@ export default function DestinationsClient() {
       <Header />
       <ScrollToTop />
 
-      <section className="relative pt-44 pb-32 overflow-hidden flex items-center min-h-[50vh]">
+      <section className="relative pt-32 md:pt-44 pb-24 md:pb-32 overflow-hidden flex items-center min-h-[45vh]">
         <div className="absolute inset-0 z-0">
           <Image
             src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1920&q=80"
@@ -197,12 +197,12 @@ export default function DestinationsClient() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="inline-block bg-white/95 backdrop-blur-md border border-white/50 shadow-2xl p-8 md:p-10 rounded-3xl max-w-3xl mx-auto"
+            className="inline-block bg-white/95 backdrop-blur-md border border-white/50 shadow-2xl p-6 md:p-10 rounded-3xl max-w-3xl mx-auto w-full"
           >
             <span className="inline-block px-4 py-1.5 border border-accent/30 bg-accent/5 rounded-full text-accent text-xs font-bold tracking-[0.25em] uppercase mb-5">
               Explore the World
             </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-primary leading-tight mb-4">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-primary leading-tight mb-4">
               Our Destinations
             </h1>
             <p className="text-primary-800 text-sm md:text-base max-w-xl mx-auto font-medium leading-relaxed">
@@ -221,7 +221,7 @@ export default function DestinationsClient() {
           className="bg-white rounded-2xl shadow-xl shadow-primary/5 p-4 md:p-6"
         >
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex overflow-x-auto gap-2 pb-1 -mx-1 px-1 scrollbar-hide">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
@@ -229,7 +229,7 @@ export default function DestinationsClient() {
                     setCategory(cat);
                     setVisibleCount(8);
                   }}
-                  className={`px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider transition-all duration-300 ${
+                  className={`px-4 py-2 rounded-full text-xs font-medium uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${
                     category === cat
                       ? "bg-accent text-white shadow-md shadow-accent/20"
                       : "bg-primary/5 text-primary/80 hover:bg-primary/10"
@@ -337,7 +337,7 @@ export default function DestinationsClient() {
                       duration={dest.duration}
                       price={dest.price}
                       type={dest.type}
-                      href={`/destinations/${dest.slug}`}
+                      href={dest.slug ? `/destinations/${dest.slug}` : `/destinations`}
                     />
                   </motion.div>
                 ))}

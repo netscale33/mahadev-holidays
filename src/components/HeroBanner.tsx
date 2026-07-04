@@ -80,7 +80,7 @@ export default function HeroBanner({
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.4 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-heading font-black text-white leading-tight max-w-5xl mb-6 [text-shadow:0_4px_16px_rgba(0,0,0,0.9)] select-none"
+          className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-heading font-black text-white leading-tight max-w-5xl mb-4 md:mb-6 [text-shadow:0_4px_16px_rgba(0,0,0,0.9)] select-none px-2"
         >
           Discover the <span className="zorvent-shimmer font-black select-none [text-shadow:none]">Extraordinary</span>
         </motion.h1>
@@ -89,9 +89,9 @@ export default function HeroBanner({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.7 }}
-          className="px-8 py-3 bg-black/60 backdrop-blur-md border border-white/20 rounded-full mb-8 shadow-2xl"
+          className="px-4 md:px-8 py-2.5 md:py-3 bg-black/60 backdrop-blur-md border border-white/20 rounded-full mb-6 md:mb-8 shadow-2xl max-w-[90vw] md:max-w-none"
         >
-          <p className="text-lg md:text-xl lg:text-2xl text-white font-heading font-extrabold tracking-wide select-none">
+          <p className="text-sm md:text-xl lg:text-2xl text-white font-heading font-extrabold tracking-wide select-none">
             {displayText}
             {typingDone ? (
               <span className="animate-pulse text-gold font-black">|</span>
