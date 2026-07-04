@@ -109,6 +109,19 @@ export default function ContactPage() {
       });
       localStorage.setItem("mahadev_inquiries", JSON.stringify(list));
 
+      // Redirect to WhatsApp with pre-filled details
+      const waNumber = "919328151481";
+      const messageText = `Hello Mahadev Holidays! 🙏 I want to make an inquiry:
+
+👤 *Name*: ${formData.name}
+📞 *Phone*: ${formData.phone}
+✉️ *Email*: ${formData.email}
+🗺️ *Preferred Destination*: ${formData.destination}
+💬 *Requirements/Details*: ${formData.message || "None"}`;
+
+      const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(messageText)}`;
+      window.open(waUrl, "_blank");
+
       setIsSubmitting(false);
       setSubmitSuccess(true);
       setFormData({ name: "", email: "", phone: "", destination: "", message: "" });

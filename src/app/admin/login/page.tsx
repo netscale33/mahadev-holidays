@@ -23,9 +23,12 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    // Verify credentials client-side for immediate access without backend dependency
+    // Verify credentials client-side using localStorage values (falls back to hardcoded defaults)
     setTimeout(() => {
-      if (username === "@vishalchouhan" && password === "@vishalchouhantravel77") {
+      const storedUser = localStorage.getItem("admin_username") || "@vishalchouhan";
+      const storedPass = localStorage.getItem("admin_password") || "@vishalchouhantravel77";
+
+      if (username === storedUser && password === storedPass) {
         localStorage.setItem("admin_token", "local_admin_dummy_token");
         router.push("/admin");
       } else {

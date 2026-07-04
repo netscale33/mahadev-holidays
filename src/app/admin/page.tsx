@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, MapPin, CalendarCheck, Star, FileText,
   Image, Users, Shield, LogOut,
-  Menu, X, Plus, Edit3, Trash2, Eye, Check,
+  Menu, X, Plus, Edit3, Trash2, Eye, Check, EyeOff, Lock, User, Settings,
   ChevronDown, Download, RefreshCw, Bell, Upload, Copy,
   Filter, TrendingUp, IndianRupee, CheckCircle2, XCircle,
   Globe, Clock, Tag, Mail,
@@ -31,6 +31,7 @@ const pageTitles: Record<string, string> = {
   media: "Media Library",
   customers: "Customers",
   users: "User Management",
+  profile: "Profile & Settings",
 };
 
 /** Normalize a MongoDB document by mapping _id → id */
@@ -67,6 +68,7 @@ export default function AdminPage() {
           {activeSection === "media" && <MediaSection />}
           {activeSection === "customers" && <CustomersSection />}
           {activeSection === "users" && <UsersSection />}
+          {activeSection === "profile" && <ProfileSection />}
         </main>
       </div>
     </div>
@@ -1125,4 +1127,223 @@ function InquiriesSection() {
     </div>
   );
 }
+
+/* ───────── Profile & Settings Section ───────── */
+
+function ProfileSection() {
+  const [username, setUsername] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Load current username from localStorage
+    const savedUser = localStorage.getItem("admin_username") || "@vishalchouhan";
+    setUsername(savedUser);
+  }, []);
+
+  function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!username.trim()) {
+      setError("Username cannot be empty");
+      return;
+    }
+
+    setLoading(true);
+    setTimeout(() => {
+      localStorage.setItem("admin_username", username.trim());
+      setSuccess("Username updated successfully!");
+      setLoading(false);
+    }, 600);
+  }
+
+  function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+      setError("Please fill out all password fields");
+      return;
+    }
+
+    const savedPass = localStorage.getItem("admin_password") || "@vishalchouhantravel77";
+    if (currentPassword !== savedPass) {
+      setError("Current password is incorrect");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("New password must be at least 6 characters long");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("New password and confirm password do not match");
+      return;
+    }
+
+    setLoading(true);
+    setTimeout(() => {
+      localStorage.setItem("admin_password", newPassword);
+      setSuccess("Password updated successfully! Use your new password on your next login.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setLoading(false);
+    }, 800);
+  }
+
+  return (
+    <div className="space-y-8 max-w-2xl mx-auto">
+      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-primary/5 border border-gold/10">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+            <User size={20} />
+          </div>
+          <div>
+            <h2 className="text-xl font-heading font-black text-primary">Admin Profile Settings</h2>
+            <p className="text-primary/60 text-xs">Update your portal username and ID</p>
+          </div>
+        </div>
+
+        {success && success.includes("Username") && (
+          <div className="mb-4 bg-green-50 text-green-600 border border-green-200 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
+            <Check size={16} />
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSaveProfile} className="space-y-4">
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-primary/70 font-extrabold mb-2">Username / Login ID</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-3 bg-cream/50 border border-gold/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/40 font-medium text-primary"
+              placeholder="@vishalchouhan"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-3 bg-accent hover:bg-accent-600 text-white font-bold rounded-full text-sm transition-all duration-300 shadow-md active:scale-95 disabled:opacity-50"
+          >
+            {loading ? "Saving..." : "Save Username"}
+          </button>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-primary/5 border border-gold/10">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+            <Lock size={20} />
+          </div>
+          <div>
+            <h2 className="text-xl font-heading font-black text-primary">Change Password</h2>
+            <p className="text-primary/60 text-xs">Update password for your admin account</p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 bg-red-50 text-red-600 border border-red-200 text-sm px-4 py-3 rounded-xl">
+            {error}
+          </div>
+        )}
+
+        {success && success.includes("Password") && (
+          <div className="mb-4 bg-green-50 text-green-600 border border-green-200 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
+            <Check size={16} />
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleChangePassword} className="space-y-5">
+          <div className="relative">
+            <label className="block text-xs uppercase tracking-wider text-primary/70 font-extrabold mb-2">Current Password</label>
+            <div className="relative">
+              <input
+                type={showCurrent ? "text" : "password"}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full pl-4 pr-10 py-3 bg-cream/50 border border-gold/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/40 font-medium text-primary"
+                placeholder="Enter current password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(!showCurrent)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary/40 hover:text-primary transition-colors"
+              >
+                {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="relative">
+            <label className="block text-xs uppercase tracking-wider text-primary/70 font-extrabold mb-2">New Password</label>
+            <div className="relative">
+              <input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full pl-4 pr-10 py-3 bg-cream/50 border border-gold/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/40 font-medium text-primary"
+                placeholder="Enter new password (min 6 chars)"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary/40 hover:text-primary transition-colors"
+              >
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="relative">
+            <label className="block text-xs uppercase tracking-wider text-primary/70 font-extrabold mb-2">Confirm New Password</label>
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full pl-4 pr-10 py-3 bg-cream/50 border border-gold/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/40 font-medium text-primary"
+                placeholder="Confirm new password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary/40 hover:text-primary transition-colors"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-3 bg-accent hover:bg-accent-600 text-white font-bold rounded-full text-sm transition-all duration-300 shadow-md active:scale-95 disabled:opacity-50"
+          >
+            {loading ? "Updating..." : "Change Password"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 

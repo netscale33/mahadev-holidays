@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   MessageSquare,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { label: "Media Library", section: "media", icon: Image },
   { label: "Customers", section: "customers", icon: Users },
   { label: "User Management", section: "users", icon: Shield },
+  { label: "Profile & Settings", section: "profile", icon: Settings },
 ];
 
 interface AdminSidebarProps {
