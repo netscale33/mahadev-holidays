@@ -196,27 +196,122 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-gold/15 flex flex-col items-center text-center gap-4 animate-fade-in">
-          <span className="text-primary/60 text-[10px] uppercase tracking-[0.3em] font-black leading-none">CREATIVE BRANDING PARTNER</span>
-          <a 
-            href="https://zorvent.com" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="group relative flex flex-col items-center justify-center p-8 bg-gradient-to-br from-primary-950 via-primary-900 to-primary-950 border-2 border-accent/40 rounded-3xl transition-all duration-500 shadow-[0_10px_30px_rgba(255,0,85,0.2)] hover:shadow-[0_15px_40px_rgba(255,165,0,0.45)] max-w-sm w-full overflow-hidden hover:scale-[1.05]"
+        <div className="mt-16 pt-8 border-t border-gold/15 flex flex-col items-center text-center gap-4">
+          <span className="text-primary/50 text-[10px] uppercase tracking-[0.35em] font-black leading-none">
+            CREATIVE BRANDING PARTNER
+          </span>
+
+          {/* ═══ ZORVENT CARD — FULL BAWAL MODE ═══ */}
+          <a
+            href="https://zorvent.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group zorvent-float relative flex flex-col items-center justify-center p-10 md:p-12 rounded-[2rem] max-w-sm w-full cursor-pointer"
+            style={{ isolation: "isolate" }}
           >
-            {/* Blurry glow backdrop */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-accent via-gold to-accent rounded-3xl blur opacity-30 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 -z-10" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 via-gold/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            <span className="text-[10px] text-accent tracking-[0.4em] font-black uppercase mb-2 leading-none animate-pulse">
-              DESIGNED & DEVELOPED BY
-            </span>
-            <span className="text-4xl font-heading font-black tracking-[0.25em] bg-gradient-to-r from-[#FF0055] via-[#FF8C00] to-[#FFD700] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(255,0,85,0.6)] select-none uppercase transition-all duration-300 group-hover:scale-105">
-              ZORVENT
-            </span>
-            <span className="text-[10px] text-white/90 font-bold bg-white/10 border border-white/20 px-4 py-1.5 rounded-full tracking-widest mt-4 group-hover:bg-accent group-hover:text-white group-hover:border-accent transition-all duration-300">
-              WWW.ZORVENT.COM
-            </span>
+            {/* — Layer 1: Spinning conic-gradient border ring — */}
+            <div
+              className="conic-border-spin absolute -inset-[3px] rounded-[2rem] -z-10"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, #FF0055 0%, #FF6B00 25%, #FFD700 50%, #FF6B00 75%, #FF0055 100%)",
+              }}
+            />
+
+            {/* — Layer 2: Solid dark inner card — */}
+            <div className="absolute inset-[3px] bg-[#040407] rounded-[calc(2rem-3px)] -z-10" />
+
+            {/* — Layer 3: Breathing radial glow — */}
+            <div
+              className="glow-breathe absolute inset-0 rounded-[2rem] -z-10 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 50%, rgba(255,107,0,0.55) 0%, rgba(255,0,85,0.25) 40%, transparent 70%)",
+              }}
+            />
+
+            {/* — Layer 4: Hover inner glow overlay — */}
+            <div
+              className="absolute inset-0 rounded-[2rem] -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 30%, rgba(255,215,0,0.35) 0%, transparent 65%)",
+              }}
+            />
+
+            {/* — Layer 5: Scan-line sweep — */}
+            <div
+              className="scan-sweep absolute left-0 right-0 h-[2px] rounded-full pointer-events-none -z-10"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)",
+              }}
+            />
+
+            {/* — Layer 6: Corner sparkle diamonds — */}
+            {/* Top-left */}
+            <svg className="sparkle-1 absolute top-3 left-4 w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FFD700" />
+            </svg>
+            {/* Top-right */}
+            <svg className="sparkle-2 absolute top-3 right-4 w-3 h-3 pointer-events-none" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FF6B00" />
+            </svg>
+            {/* Bottom-left */}
+            <svg className="sparkle-3 absolute bottom-4 left-5 w-3 h-3 pointer-events-none" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FF0055" />
+            </svg>
+            {/* Bottom-right */}
+            <svg className="sparkle-4 absolute bottom-4 right-5 w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FFD700" />
+            </svg>
+            {/* Mid-left */}
+            <svg className="sparkle-5 absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 pointer-events-none" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FF6B00" />
+            </svg>
+            {/* Mid-right */}
+            <svg className="sparkle-6 absolute right-2 top-1/2 -translate-y-1/2 w-2 h-2 pointer-events-none" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FFD700" />
+            </svg>
+
+            {/* ─── Content ─── */}
+            <div className="relative flex flex-col items-center gap-3 select-none">
+              {/* Label */}
+              <span
+                className="text-[9px] tracking-[0.55em] font-black uppercase"
+                style={{ color: "#FF8C00", animation: "glow-breathe 2s ease-in-out infinite" }}
+              >
+                DESIGNED &amp; DEVELOPED BY
+              </span>
+
+              {/* THE BIG NAME */}
+              <span
+                className="zorvent-shimmer text-6xl md:text-7xl font-heading font-black tracking-[0.22em] uppercase"
+              >
+                ZORVENT
+              </span>
+
+              {/* Divider line with glow */}
+              <div
+                className="w-32 h-[1.5px] rounded-full my-1"
+                style={{
+                  background:
+                    "linear-gradient(90deg, transparent, #FFD700, #FF6B00, #FFD700, transparent)",
+                }}
+              />
+
+              {/* URL pill */}
+              <span
+                className="text-[11px] font-black tracking-[0.25em] uppercase px-6 py-2 rounded-full transition-all duration-300 group-hover:scale-105"
+                style={{
+                  background: "rgba(255,107,0,0.12)",
+                  border: "1.5px solid rgba(255,215,0,0.4)",
+                  color: "rgba(255,255,255,0.85)",
+                }}
+              >
+                WWW.ZORVENT.COM →
+              </span>
+            </div>
           </a>
         </div>
       </div>

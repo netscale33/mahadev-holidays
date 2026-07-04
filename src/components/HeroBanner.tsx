@@ -82,7 +82,7 @@ export default function HeroBanner({
           transition={{ duration: 0.7, delay: 0.4 }}
           className="text-5xl md:text-7xl lg:text-8xl font-heading font-black text-white leading-tight max-w-5xl mb-6 [text-shadow:0_4px_16px_rgba(0,0,0,0.9)] select-none"
         >
-          Discover the <span className="text-white font-black drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] [text-shadow:0_0_30px_rgba(255,255,255,0.9),0_4px_16px_rgba(0,0,0,0.9)]">Extraordinary</span>
+          Discover the <span className="shimmer-gold font-black select-none">Extraordinary</span>
         </motion.h1>
 
         <motion.div
