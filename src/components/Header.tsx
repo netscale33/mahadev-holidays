@@ -65,13 +65,14 @@ export default function Header({ transparent = false }: { transparent?: boolean 
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const closeMobile = () => setMobileOpen(false);
+  const openMobile  = () => setMobileOpen(true);
 
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={containerTransition}
-      className="fixed top-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-md shadow-lg shadow-black/5 py-2 border-b border-gray-200/50"
+      className="fixed top-0 left-0 right-0 z-[60] bg-white/98 backdrop-blur-md shadow-lg shadow-black/5 py-2 border-b border-gray-200/50"
     >
       <nav className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 shrink-0 py-1">
@@ -113,12 +114,13 @@ export default function Header({ transparent = false }: { transparent?: boolean 
           >
             Plan Your Trip
           </Link>
+          {/* ── Hamburger button — always 3 lines, large tap target ── */}
           <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden relative z-50 text-primary p-2"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            onClick={openMobile}
+            className="lg:hidden flex items-center justify-center w-11 h-11 rounded-xl text-primary hover:bg-primary/5 transition-colors touch-manipulation"
+            aria-label="Open menu"
           >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <Menu className="w-6 h-6" />
           </button>
         </div>
       </nav>
@@ -126,25 +128,28 @@ export default function Header({ transparent = false }: { transparent?: boolean 
       <AnimatePresence>
         {mobileOpen && (
           <>
+            {/* ─── Backdrop ─── */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden"
               onClick={closeMobile}
             />
+            {/* ─── Slide-in Panel ─── */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
-              className="fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white z-40 lg:hidden shadow-2xl shadow-black/20"
+              transition={{ type: "tween", duration: 0.28, ease: "easeInOut" }}
+              className="fixed top-0 right-0 bottom-0 w-[300px] max-w-[88vw] bg-white z-[50] lg:hidden shadow-2xl shadow-black/25 overflow-y-auto"
             >
-              <div className="flex flex-col h-full pt-8 pb-8 px-8">
-                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+              <div className="flex flex-col h-full pt-6 pb-8 px-6">
+                {/* ── Panel header: logo + close button ── */}
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
                   <Link href="/" onClick={closeMobile} className="flex items-center gap-2.5 shrink-0">
-                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-100 bg-white">
+                    <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-gray-100 bg-white">
                       <Image
                         src="/logo.png"
                         alt="Mahadev Holidays Logo"
@@ -161,19 +166,28 @@ export default function Header({ transparent = false }: { transparent?: boolean 
                       </span>
                     </div>
                   </Link>
+                  {/* Dedicated close button — big tap target */}
+                  <button
+                    onClick={closeMobile}
+                    className="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 hover:bg-gray-200 text-primary transition-colors touch-manipulation"
+                    aria-label="Close menu"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <div className="flex flex-col gap-1">
+                {/* Nav links */}
+                <div className="flex flex-col gap-0.5">
                   {NAV_LINKS.map((link, i) => (
                     <motion.div
                       key={link.href}
-                      initial={{ opacity: 0, x: 20 }}
+                      initial={{ opacity: 0, x: 24 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 + i * 0.05 }}
+                      transition={{ delay: 0.05 + i * 0.05 }}
                     >
                       <Link
                         href={link.href}
                         onClick={closeMobile}
-                        className="block py-3 text-primary hover:text-accent text-lg font-bold transition-colors border-b border-gray-200/50"
+                        className="flex items-center py-3.5 text-primary hover:text-accent text-base font-bold transition-colors border-b border-gray-100 active:bg-accent/5 touch-manipulation"
                       >
                         {link.label}
                       </Link>
