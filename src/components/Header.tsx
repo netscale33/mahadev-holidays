@@ -67,89 +67,90 @@ export default function Header({ transparent = false }: { transparent?: boolean 
   const closeMobile = () => setMobileOpen(false);
   const openMobile  = () => setMobileOpen(true);
 
-  return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={containerTransition}
-      className="fixed top-0 left-0 right-0 z-[60] bg-white/98 backdrop-blur-md shadow-lg shadow-black/5 py-2 border-b border-gray-200/50"
-    >
-      <nav className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between h-16 md:h-auto overflow-hidden">
-        <Link href="/" className="flex items-center gap-2 md:gap-3 shrink-0 py-1 min-w-0">
-          <div className="relative w-11 h-11 md:w-14 md:h-14 rounded-xl overflow-hidden shadow-sm border border-gray-100 bg-white shrink-0">
-            <Image
-              src="/logo.png"
-              alt="Mahadev Holidays Logo"
-              fill
-              className="object-contain p-1"
-              priority
-            />
-          </div>
-          {/* Logo text — hide on small mobile to give hamburger space */}
-          <div className="hidden sm:flex flex-col">
-            <span className="font-heading font-black text-lg md:text-xl leading-none tracking-tight text-primary">
-              MAHADEV
-            </span>
-            <span className="font-heading font-bold text-xs md:text-sm tracking-[0.25em] text-accent mt-0.5 leading-none">
-              HOLIDAYS
-            </span>
-          </div>
-          {/* Very small screen: show abbreviated text */}
-          <div className="flex sm:hidden flex-col">
-            <span className="font-heading font-black text-sm leading-none tracking-tight text-primary">MAHADEV</span>
-            <span className="font-heading font-bold text-[9px] tracking-[0.2em] text-accent mt-0.5 leading-none">HOLIDAYS</span>
-          </div>
-        </Link>
-
-        <div className="hidden lg:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="relative text-primary hover:text-accent text-sm font-bold tracking-wider uppercase transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Link
-            href="/contact"
-            className="hidden lg:inline-flex px-8 py-3 bg-accent hover:bg-accent-600 text-white font-bold rounded-full text-sm tracking-wide transition-all duration-300 shadow-lg shadow-accent/30 hover:shadow-accent/50"
-          >
-            Plan Your Trip
+    <>
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={containerTransition}
+        className="fixed top-0 left-0 right-0 z-[60] bg-white/98 backdrop-blur-md shadow-lg shadow-black/5 py-2 border-b border-gray-200/50"
+      >
+        <nav className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between h-16 md:h-auto overflow-hidden">
+          <Link href="/" className="flex items-center gap-2 md:gap-3 shrink-0 py-1 min-w-0">
+            <div className="relative w-11 h-11 md:w-14 md:h-14 rounded-xl overflow-hidden shadow-sm border border-gray-100 bg-white shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Mahadev Holidays Logo"
+                fill
+                className="object-contain p-1"
+                priority
+              />
+            </div>
+            {/* Logo text — hide on small mobile to give hamburger space */}
+            <div className="hidden sm:flex flex-col">
+              <span className="font-heading font-black text-lg md:text-xl leading-none tracking-tight text-primary">
+                MAHADEV
+              </span>
+              <span className="font-heading font-bold text-xs md:text-sm tracking-[0.25em] text-accent mt-0.5 leading-none">
+                HOLIDAYS
+              </span>
+            </div>
+            {/* Very small screen: show abbreviated text */}
+            <div className="flex sm:hidden flex-col">
+              <span className="font-heading font-black text-sm leading-none tracking-tight text-primary">MAHADEV</span>
+              <span className="font-heading font-bold text-[9px] tracking-[0.2em] text-accent mt-0.5 leading-none">HOLIDAYS</span>
+            </div>
           </Link>
-          {/* ── Hamburger button — accent bg, always visible on mobile ── */}
-          <button
-            onClick={openMobile}
-            className="lg:hidden flex items-center justify-center w-11 h-11 rounded-xl bg-accent text-white shadow-md shrink-0 touch-manipulation active:scale-95 transition-transform"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        </div>
-      </nav>
+
+          <div className="hidden lg:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="relative text-primary hover:text-accent text-sm font-bold tracking-wider uppercase transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/contact"
+              className="hidden lg:inline-flex px-8 py-3 bg-accent hover:bg-accent-600 text-white font-bold rounded-full text-sm tracking-wide transition-all duration-300 shadow-lg shadow-accent/30 hover:shadow-accent/50"
+            >
+              Plan Your Trip
+            </Link>
+            {/* ── Hamburger button — accent bg, always visible on mobile ── */}
+            <button
+              onClick={openMobile}
+              className="lg:hidden flex items-center justify-center w-11 h-11 rounded-xl bg-accent text-white shadow-md shrink-0 touch-manipulation active:scale-95 transition-transform"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+        </nav>
+      </motion.header>
 
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* ─── Backdrop ─── */}
+            {/* ─── Backdrop — high z-index, viewport relative ─── */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] lg:hidden"
               onClick={closeMobile}
             />
-            {/* ─── Slide-in Panel ─── */}
+            {/* ─── Slide-in Panel — high z-index, viewport relative ─── */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.28, ease: "easeInOut" }}
-              className="fixed top-0 right-0 bottom-0 w-[300px] max-w-[88vw] bg-white z-[50] lg:hidden shadow-2xl shadow-black/25 overflow-y-auto"
+              className="fixed top-0 right-0 bottom-0 w-[300px] max-w-[88vw] bg-white z-[9999] lg:hidden shadow-2xl shadow-black/25 overflow-y-auto"
             >
               <div className="flex flex-col min-h-full pt-6 pb-8 px-6">
                 {/* ── Panel header: logo + close button ── */}
@@ -233,6 +234,6 @@ export default function Header({ transparent = false }: { transparent?: boolean 
           </>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 }
