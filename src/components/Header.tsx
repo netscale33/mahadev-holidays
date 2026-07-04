@@ -67,6 +67,7 @@ export default function Header({ transparent = false }: { transparent?: boolean 
   const closeMobile = () => setMobileOpen(false);
   const openMobile  = () => setMobileOpen(true);
 
+  return (
     <>
       <motion.header
         initial={{ opacity: 0, y: -20 }}
