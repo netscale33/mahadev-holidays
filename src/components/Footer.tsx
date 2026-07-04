@@ -206,20 +206,9 @@ export default function Footer() {
             href="https://zorvent.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="group zorvent-float relative flex flex-col items-center justify-center p-10 md:p-12 rounded-[2rem] max-w-sm w-full cursor-pointer"
-            style={{ isolation: "isolate" }}
+            className="group zorvent-float relative flex flex-col items-center justify-center p-10 md:p-12 rounded-[2rem] max-w-sm w-full cursor-pointer overflow-hidden"
+            style={{ isolation: "isolate", background: "#040407" }}
           >
-            {/* — Layer 1: Spinning conic-gradient border ring — */}
-            <div
-              className="conic-border-spin absolute -inset-[3px] rounded-[2rem] -z-10"
-              style={{
-                background:
-                  "conic-gradient(from 0deg, #FF0055 0%, #FF6B00 25%, #FFD700 50%, #FF6B00 75%, #FF0055 100%)",
-              }}
-            />
-
-            {/* — Layer 2: Solid dark inner card — */}
-            <div className="absolute inset-[3px] bg-[#040407] rounded-[calc(2rem-3px)] -z-10" />
 
             {/* — Layer 3: Breathing radial glow — */}
             <div
