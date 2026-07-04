@@ -151,7 +151,7 @@ export default function Header({ transparent = false }: { transparent?: boolean 
               transition={{ type: "tween", duration: 0.28, ease: "easeInOut" }}
               className="fixed top-0 right-0 bottom-0 w-[300px] max-w-[88vw] bg-white z-[50] lg:hidden shadow-2xl shadow-black/25 overflow-y-auto"
             >
-              <div className="flex flex-col h-full pt-6 pb-8 px-6">
+              <div className="flex flex-col min-h-full pt-6 pb-8 px-6">
                 {/* ── Panel header: logo + close button ── */}
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
                   <Link href="/" onClick={closeMobile} className="flex items-center gap-2.5 shrink-0">
@@ -200,11 +200,11 @@ export default function Header({ transparent = false }: { transparent?: boolean 
                     </motion.div>
                   ))}
                 </div>
-                <div className="mt-auto space-y-6">
+                <div className="mt-auto pt-8 space-y-6">
                   <Link
                     href="/contact"
                     onClick={closeMobile}
-                    className="block text-center px-6 py-3 bg-accent hover:bg-accent-600 text-white font-bold rounded-full text-sm transition-all duration-300"
+                    className="block text-center px-6 py-3.5 bg-accent hover:bg-accent-600 text-white font-bold rounded-full text-sm transition-all duration-300"
                   >
                     Plan Your Trip
                   </Link>
