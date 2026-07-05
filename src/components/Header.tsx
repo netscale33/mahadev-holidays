@@ -223,10 +223,9 @@ export default function Header({ transparent = false }: { transparent?: boolean 
                       href="https://zorvent.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white rounded-full shadow-lg font-bold text-[9px] tracking-wider animate-pulse hover:scale-105 transition-all"
+                      className="text-xs text-primary/60 hover:text-accent font-semibold transition-colors"
                     >
-                      <span>DESIGNED & DEVELOPED BY</span>
-                      <span className="font-black text-yellow-200 tracking-widest">ZORVENT</span>
+                      Designed &amp; Developed by <span className="font-bold underline">Zorvent</span>
                     </a>
                   </div>
                 </div>

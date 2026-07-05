@@ -196,121 +196,21 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-gold/15 flex flex-col items-center text-center gap-4">
-          <span className="text-primary/50 text-[10px] uppercase tracking-[0.35em] font-black leading-none">
-            CREATIVE BRANDING PARTNER
-          </span>
-
-          {/* ═══ ZORVENT CARD — FULL BAWAL MODE ═══ */}
-          <a
-            href="https://zorvent.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group zorvent-float relative flex flex-col items-center justify-center px-8 py-10 rounded-[2rem] max-w-sm w-full cursor-pointer overflow-hidden"
-            style={{ isolation: "isolate", background: "#040407" }}
-          >
-
-            {/* — Layer 3: Breathing radial glow — */}
-            <div
-              className="glow-breathe absolute inset-0 rounded-[2rem] -z-10 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(ellipse at 50% 50%, rgba(255,107,0,0.55) 0%, rgba(255,0,85,0.25) 40%, transparent 70%)",
-              }}
-            />
-
-            {/* — Layer 4: Hover inner glow overlay — */}
-            <div
-              className="absolute inset-0 rounded-[2rem] -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(ellipse at 50% 30%, rgba(255,215,0,0.35) 0%, transparent 65%)",
-              }}
-            />
-
-            {/* — Layer 5: Scan-line sweep — */}
-            <div
-              className="scan-sweep absolute left-0 right-0 h-[2px] rounded-full pointer-events-none -z-10"
-              style={{
-                background:
-                  "linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.7) 50%, transparent 100%)",
-              }}
-            />
-
-            {/* — Layer 6: Corner sparkle diamonds — */}
-            {/* Top-left */}
-            <svg className="sparkle-1 absolute top-3 left-4 w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FFD700" />
-            </svg>
-            {/* Top-right */}
-            <svg className="sparkle-2 absolute top-3 right-4 w-3 h-3 pointer-events-none" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FF6B00" />
-            </svg>
-            {/* Bottom-left */}
-            <svg className="sparkle-3 absolute bottom-4 left-5 w-3 h-3 pointer-events-none" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FF0055" />
-            </svg>
-            {/* Bottom-right */}
-            <svg className="sparkle-4 absolute bottom-4 right-5 w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FFD700" />
-            </svg>
-            {/* Mid-left */}
-            <svg className="sparkle-5 absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 pointer-events-none" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FF6B00" />
-            </svg>
-            {/* Mid-right */}
-            <svg className="sparkle-6 absolute right-2 top-1/2 -translate-y-1/2 w-2 h-2 pointer-events-none" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L13.5 10.5L22 12L13.5 13.5L12 22L10.5 13.5L2 12L10.5 10.5Z" fill="#FFD700" />
-            </svg>
-
-            {/* ─── Content ─── */}
-            <div className="relative flex flex-col items-center gap-3 select-none">
-              {/* Label */}
-              <span
-                className="text-[9px] tracking-[0.55em] font-black uppercase"
-                style={{ color: "#FF8C00", animation: "glow-breathe 2s ease-in-out infinite" }}
-              >
-                DESIGNED &amp; DEVELOPED BY
-              </span>
-
-              {/* THE BIG NAME */}
-              <span
-                className="zorvent-shimmer text-5xl md:text-6xl font-heading font-black tracking-[0.15em] uppercase"
-              >
-                ZORVENT
-              </span>
-
-              {/* Divider line with glow */}
-              <div
-                className="w-32 h-[1.5px] rounded-full my-1"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent, #FFD700, #FF6B00, #FFD700, transparent)",
-                }}
-              />
-
-              {/* URL pill */}
-              <span
-                className="text-[11px] font-black tracking-[0.25em] uppercase px-6 py-2 rounded-full transition-all duration-300 group-hover:scale-105"
-                style={{
-                  background: "rgba(255,107,0,0.12)",
-                  border: "1.5px solid rgba(255,215,0,0.4)",
-                  color: "rgba(255,255,255,0.85)",
-                }}
-              >
-                WWW.ZORVENT.COM →
-              </span>
-            </div>
-          </a>
-        </div>
-      </div>
-
       <div className="border-t border-gold/10 bg-cream-dark/50">
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col md:flex-row items-center gap-3">
             <p className="text-primary/70 text-xs font-semibold">
               &copy; {year} MAHADEV HOLIDAYS. All rights reserved.
             </p>
+            <span className="hidden md:inline text-primary/30 text-xs">|</span>
+            <a
+              href="https://zorvent.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary/60 hover:text-accent font-semibold transition-colors"
+            >
+              Designed &amp; Developed by <span className="font-bold underline">Zorvent</span>
+            </a>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-primary/30 text-xs font-semibold">We Accept:</span>
