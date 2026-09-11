@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+node_modules/
+_next/
+dist/
+build/
+.turbo/
+*.sst
+android-sdk/
+android/
+*.zip
+scratch/
+dev/cache/
+*.exe
+*.dll
+*.node
