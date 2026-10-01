@@ -52,19 +52,31 @@ export default function Modal({
   );
 
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
+    if (!isOpen) return;
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, handleKeyDown]);
+
+  // Auto-focus + scroll-lock ONLY on open transition.
+  // (Earlier this ran on every parent re-render, so typing in any field
+  // yanked the cursor back to the first input on each keystroke.)
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (isOpen && !wasOpen.current) {
+      wasOpen.current = true;
       document.body.style.overflow = "hidden";
       const firstFocusable = contentRef.current?.querySelector<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
       firstFocusable?.focus();
     }
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+    if (!isOpen && wasOpen.current) {
+      wasOpen.current = false;
       document.body.style.overflow = "";
-    };
-  }, [isOpen, handleKeyDown]);
+    }
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
