@@ -465,44 +465,64 @@ export default function Home() {
   const [destinations, setDestinations] = useState<any[]>(FEATURED_DESTINATIONS);
 
   useEffect(() => {
-    // Force-sync browser local storage to load fixed image links and 12-item rows
-    const currentVersion = "v4";
-    const localVersion = localStorage.getItem("mahadev_db_version");
-    if (localVersion !== currentVersion) {
-      localStorage.setItem("mahadev_destinations", JSON.stringify(FEATURED_DESTINATIONS));
-      localStorage.setItem("mahadev_db_version", currentVersion);
-    }
-
-    const local = localStorage.getItem("mahadev_destinations");
-    if (local) {
+    async function load() {
+      // 1. API (Supabase) first — so admin edits show for every visitor
       try {
-        const parsed = JSON.parse(local);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const featured = parsed.filter((d: any) => d.isFeatured ?? true);
-          const listToUse = featured.length >= 12 ? featured : parsed;
-          const formatted = listToUse.slice(0, 12).map((d: any) => ({
-            id: d.id || d._id,
-            title: d.title,
-            slug: d.slug,
-            location: d.location,
-            image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
-            price: d.price,
-            rating: d.rating || 4.5,
-            reviewCount: d.reviewCount || 10,
-            duration: d.duration,
-            type: d.type || (d.category === "international" ? "Luxury" : "Nature"),
-            category: String(d.category).toLowerCase() === "international" ? "International" : "Domestic",
-            href: d.slug ? `/destinations/${d.slug}` : `/destinations`
-          }));
-          setDestinations(formatted);
-          return;
+        const res = await fetch("/api/destinations?limit=12");
+        if (res.ok) {
+          const data = await res.json();
+          const list = (data.destinations ?? []).filter((d: any) => d.isAvailable !== false);
+          if (list.length > 0) {
+            setDestinations(list.map(formatDest));
+            try {
+              localStorage.setItem("mahadev_destinations", JSON.stringify(list));
+            } catch {}
+            return;
+          }
+        }
+      } catch {
+        // fall through to cache/static below
+      }
+
+      // 2. Offline cache from previous visits
+      try {
+        const local = localStorage.getItem("mahadev_destinations");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const live = parsed.filter((d: any) => (d.isAvailable ?? d.isavailable ?? true) !== false);
+            if (live.length > 0) {
+              setDestinations(live.map(formatDest));
+              return;
+            }
+          }
         }
       } catch (err) {
-        console.error("Failed to parse local storage destinations, falling back:", err);
+        console.error("Failed to parse cached destinations:", err);
       }
+
+      // 3. Built-in static fallback
+      setDestinations(FEATURED_DESTINATIONS);
     }
 
-    setDestinations(FEATURED_DESTINATIONS);
+    function formatDest(d: any) {
+      return {
+        id: d.id || d._id,
+        title: d.title,
+        slug: d.slug,
+        location: d.location,
+        image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
+        price: d.price,
+        rating: d.rating || 4.5,
+        reviewCount: d.reviewCount || 10,
+        duration: d.duration,
+        type: d.type || (String(d.category).toLowerCase() === "international" ? "Luxury" : "Nature"),
+        category: String(d.category).toLowerCase() === "international" ? "International" : "Domestic",
+        href: d.slug ? `/destinations/${d.slug}` : `/destinations`
+      };
+    }
+
+    load();
   }, []);
 
   return (

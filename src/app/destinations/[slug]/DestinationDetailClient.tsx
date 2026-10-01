@@ -827,13 +827,63 @@ export default function DestinationDetailClient() {
     async function loadDetail() {
       try {
         setLoading(true);
-        
-        // 1. Check browser local storage first to fetch edited/added destinations
+
+        // 1. Live row from API (Supabase) — admin edits come from here
+        let apiRow: any = null;
+        try {
+          const apiRes = await fetch(`/api/destinations/${slug}`);
+          if (apiRes.ok) {
+            const apiData = await apiRes.json();
+            if (apiData.destination) apiRow = apiData.destination;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        // 2. Check browser cache (same browser) if API unreachable
         const local = localStorage.getItem("mahadev_destinations");
         if (local) {
           try {
             const list = JSON.parse(local);
-            const found = list.find((d: any) => d.slug === slug);
+            const found = apiRow || list.find((d: any) => d.slug === slug);
+            const base0 = ALL_DETAILS[slug];
+            // 2b. Static rich page + admin's live fields merged on top
+            if (base0 && found) {
+              const livePrice = found.price ?? base0.price;
+              let livePricing = base0.pricing;
+              if (livePrice && base0.price && Number(livePrice) !== Number(base0.price)) {
+                const ratio = Number(livePrice) / Number(base0.price);
+                livePricing = base0.pricing.map((t) => {
+                  const p = Math.round(Number(t.price) * ratio);
+                  return { ...t, price: p, priceLabel: `₹${p.toLocaleString("en-IN")} per person` };
+                });
+              }
+              const liveImages: string[] | undefined = found.images?.length
+                ? found.images
+                : found.image
+                  ? [found.image]
+                  : undefined;
+              setDest({
+                ...base0,
+                name: found.title || base0.name,
+                location: found.location || base0.location,
+                heroImage: liveImages?.[0] || base0.heroImage,
+                rating: found.rating ?? base0.rating,
+                reviewCount: found.reviewCount ?? base0.reviewCount,
+                duration: found.duration || base0.duration,
+                description: found.description || base0.description,
+                longDescription: found.longDescription || found.description || base0.longDescription,
+                images: liveImages ? liveImages.map((img: string) => ({ src: img, alt: found.title })) : base0.images,
+                pricing: livePricing,
+                inclusions: found.inclusions?.length ? found.inclusions : base0.inclusions,
+                exclusions: found.exclusions?.length ? found.exclusions : base0.exclusions,
+                category: found.category || base0.category,
+                type: found.type || base0.type,
+                price: livePrice,
+              });
+              setLoading(false);
+              return;
+            }
             if (found) {
               const formatted: DetailedDestination = {
                 slug: found.slug,
@@ -883,13 +933,10 @@ export default function DestinationDetailClient() {
           return;
         }
 
-        // 3. Fallback fetch from API
-        const res = await fetch(`/api/destinations/${slug}`);
-        if (!res.ok) throw new Error("Not found");
-        const data = await res.json();
-        
-        if (data.destination) {
-          const d = data.destination;
+        // 4. New destination created in admin (no static page) — build from live row
+        if (!apiRow) throw new Error("Not found");
+        {
+          const d = apiRow;
           const formatted: DetailedDestination = {
             slug: d.slug,
             name: d.title,

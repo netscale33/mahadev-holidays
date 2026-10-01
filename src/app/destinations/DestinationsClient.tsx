@@ -62,67 +62,68 @@ export default function DestinationsClient() {
   const [destinationsList, setDestinationsList] = useState<DestinationData[]>(ALL_DESTINATIONS);
 
   useEffect(() => {
-    // Force-sync browser local storage to load fixed image links
-    const currentVersion = "v5";
-    const localVersion = localStorage.getItem("mahadev_db_version");
-    if (localVersion !== currentVersion) {
-      localStorage.setItem("mahadev_destinations", JSON.stringify(ALL_DESTINATIONS));
-      localStorage.setItem("mahadev_db_version", currentVersion);
-    }
-
-    const local = localStorage.getItem("mahadev_destinations");
-    if (local) {
-      try {
-        const parsed = JSON.parse(local);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const formatted = parsed.map((d: any) => ({
-            id: d.id || d._id,
-            title: d.title,
-            slug: d.slug,
-            location: d.location,
-            image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
-            price: d.price,
-            rating: d.rating || 4.5,
-            reviewCount: d.reviewCount || 10,
-            duration: d.duration,
-            type: d.type || (d.category === "international" ? "Luxury" : "Nature"),
-            category: (String(d.category).toLowerCase() === "international" ? "International" : "Domestic") as "Domestic" | "International",
-          }));
-          setDestinationsList(formatted);
-          return;
-        }
-      } catch (err) {
-        console.error("Failed to parse local storage destinations:", err);
-      }
-    }
-
-    // 2. Fallback fetch from API if not present in localStorage
-    async function loadDestinations() {
+    async function load() {
+      // 1. API (Supabase) first — admin edits show for every visitor
       try {
         const res = await fetch("/api/destinations?limit=100");
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.destinations && Array.isArray(data.destinations) && data.destinations.length > 0) {
-          const formatted = data.destinations.map((d: any) => ({
-            id: d.id || d._id,
-            title: d.title,
-            slug: d.slug,
-            location: d.location,
-            image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
-            price: d.price,
-            rating: d.rating || 4.5,
-            reviewCount: d.reviewCount || 10,
-            duration: d.duration,
-            type: d.type || (d.category === "international" ? "Luxury" : "Nature"),
-            category: (String(d.category).toLowerCase() === "international" ? "International" : "Domestic") as "Domestic" | "International",
-          }));
-          setDestinationsList(formatted);
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.destinations ?? [];
+          if (Array.isArray(list) && list.length > 0) {
+            const formatted = list
+              .filter((d: any) => d.isAvailable !== false)
+              .map(formatDest);
+            if (formatted.length > 0) {
+              setDestinationsList(formatted);
+              try {
+                localStorage.setItem("mahadev_destinations", JSON.stringify(list));
+              } catch {}
+              return;
+            }
+          }
         }
       } catch (err) {
-        console.error("Failed to load dynamic destinations, falling back to static list:", err);
+        console.error("Failed to load live destinations, trying cache:", err);
       }
+
+      // 2. Offline cache from previous visits
+      try {
+        const local = localStorage.getItem("mahadev_destinations");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const formatted = parsed
+              .filter((d: any) => (d.isAvailable ?? d.isavailable ?? true) !== false)
+              .map(formatDest);
+            if (formatted.length > 0) {
+              setDestinationsList(formatted);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse cached destinations:", err);
+      }
+      // 3. Built-in static fallback (ALL_DESTINATIONS default state stays)
     }
-    loadDestinations();
+
+    function formatDest(d: any) {
+      return {
+        id: d.id || d._id,
+        title: d.title,
+        slug: d.slug,
+        location: d.location,
+        image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
+        price: d.price,
+        rating: d.rating || 4.5,
+        reviewCount: d.reviewCount || 10,
+        duration: d.duration,
+        type: d.type || (String(d.category).toLowerCase() === "international" ? "Luxury" : "Nature"),
+        category: (String(d.category).toLowerCase() === "international" ? "International" : "Domestic") as "Domestic" | "International",
+      };
+    }
+
+    load();
   }, []);
 
   const filtered = useMemo(() => {
