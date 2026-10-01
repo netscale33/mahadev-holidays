@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Blog from '@/lib/models/Blog';
+import { getSupabaseAdmin, toApiRow, toTableRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -9,23 +8,33 @@ function isAuthenticated(request: NextRequest): boolean {
   return verifyToken(token) !== null;
 }
 
+function isUuid(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connect();
     const { id } = await params;
+    const db = getSupabaseAdmin();
 
-    const post = await Blog.findOne({
-      $or: [{ _id: id }, { slug: id }],
-    });
+    let post = null;
+    if (isUuid(id)) {
+      const { data } = await db.from('blog_posts').select('*').eq('id', id).maybeSingle();
+      post = data;
+    }
+    if (!post) {
+      const { data } = await db.from('blog_posts').select('*').eq('slug', id).maybeSingle();
+      post = data;
+    }
 
     if (!post) {
       return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ post });
+    return NextResponse.json({ post: toApiRow(post) });
   } catch (error) {
     console.error('GET blog post error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -41,20 +50,22 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
     const body = await request.json();
+    const db = getSupabaseAdmin();
 
-    const post = await Blog.findByIdAndUpdate(id, body, {
-      new: true,
-      runValidators: true,
-    });
+    const { data, error } = await db
+      .from('blog_posts')
+      .update(toTableRow('blog_posts', body))
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (!post) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ post });
+    return NextResponse.json({ post: toApiRow(data) });
   } catch (error) {
     console.error('PUT blog post error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -70,11 +81,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
+      .from('blog_posts')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
 
-    const post = await Blog.findByIdAndDelete(id);
-    if (!post) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
     }
 

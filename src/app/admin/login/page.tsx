@@ -23,20 +23,26 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    // Verify credentials client-side using localStorage values (falls back to hardcoded defaults)
-    setTimeout(() => {
-      const storedUser = localStorage.getItem("admin_username") || "@vishalchouhan";
-      const storedPass = localStorage.getItem("admin_password") || "@vishalchouhantravel77";
-
-      if (username === storedUser && password === storedPass) {
-        localStorage.setItem("admin_token", "local_admin_dummy_token");
-        router.push("/admin");
-      } else {
-        setError("Invalid username or password");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Invalid username or password");
         setPassword("");
         setLoading(false);
+        return;
       }
-    }, 500);
+      localStorage.setItem("admin_token", data.token);
+      localStorage.setItem("admin_user", JSON.stringify(data.user));
+      router.push("/admin");
+    } catch {
+      setError("Login failed. Please check your connection and try again.");
+      setLoading(false);
+    }
   }
 
   return (

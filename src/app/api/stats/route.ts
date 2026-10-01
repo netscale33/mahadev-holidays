@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Booking from '@/lib/models/Booking';
-import Destination from '@/lib/models/Destination';
-import Testimonial from '@/lib/models/Testimonial';
-import Blog from '@/lib/models/Blog';
-import Contact from '@/lib/models/Contact';
+import { getSupabaseAdmin, toApiRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
-import { readDb } from '@/lib/jsonDb';
 
 function isAuthenticated(request: NextRequest): boolean {
   const token = getTokenFromHeader(request.headers.get('Authorization') || undefined);
@@ -20,121 +14,83 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const db = getSupabaseAdmin();
     const now = new Date();
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-    try {
-      await connect();
+    const [
+      bookingsCount,
+      destinationsCount,
+      testimonialsApproved,
+      blogPublished,
+      messagesCount,
+      recent,
+      newThisYear,
+      popular,
+      trends,
+    ] = await Promise.all([
+      db.from('bookings').select('id', { count: 'exact', head: true }),
+      db.from('destinations').select('id', { count: 'exact', head: true }),
+      db.from('testimonials').select('id', { count: 'exact', head: true }).eq('is_approved', true),
+      db.from('blog_posts').select('id', { count: 'exact', head: true }).eq('is_published', true),
+      db.from('contacts').select('id', { count: 'exact', head: true }),
+      db.from('bookings').select('*').order('created_at', { ascending: false }).limit(5),
+      db.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', startOfYear),
+      db.from('bookings').select('destination_title'),
+      db.from('bookings').select('created_at,total_price').gte('created_at', sixMonthsAgo),
+    ]);
 
-      const [
-        totalBookings,
-        totalDestinations,
-        totalTestimonials,
-        totalBlogPosts,
-        totalMessages,
-        recentBookings,
-      ] = await Promise.all([
-        Booking.countDocuments(),
-        Destination.countDocuments(),
-        Testimonial.countDocuments({ isApproved: true }),
-        Blog.countDocuments({ isPublished: true }),
-        Contact.countDocuments(),
-        Booking.find().sort({ createdAt: -1 }).limit(5).lean(),
-      ]);
-
-      const popularDestinations = await Booking.aggregate([
-        { $group: { _id: '$destinationTitle', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 5 },
-      ]);
-
-      const newBookingsThisYear = await Booking.countDocuments({
-        createdAt: { $gte: startOfYear },
-      });
-
-      const monthlyTrends = await Booking.aggregate([
-        { $match: { createdAt: { $gte: sixMonthsAgo } } },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$createdAt' },
-              month: { $month: '$createdAt' },
-            },
-            count: { $sum: 1 },
-            revenue: { $sum: '$totalPrice' },
-          },
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1 } },
-      ]);
-
-      return NextResponse.json({
-        stats: {
-          totalBookings,
-          totalDestinations,
-          totalTestimonials,
-          totalBlogPosts,
-          totalMessages,
-          newBookingsThisYear,
-        },
-        recentBookings,
-        popularDestinations,
-        monthlyTrends: monthlyTrends.map((t) => ({
-          year: t._id.year,
-          month: t._id.month,
-          count: t.count,
-          revenue: t.revenue,
-        })),
-      });
-    } catch (dbError) {
-      console.warn('MongoDB connection failed in GET stats, falling back to local JSON DB:', dbError);
-      
-      const db = readDb();
-      const destinationsList = db.destinations || [];
-      const bookingsList = db.bookings || [];
-      const testimonialsList = db.testimonials || [];
-      const contactsList = db.contacts || [];
-      const blogsList = db.blogs || [];
-
-      const totalBookings = bookingsList.length;
-      const totalDestinations = destinationsList.length;
-      const totalTestimonials = testimonialsList.length;
-      const totalBlogPosts = blogsList.length;
-      const totalMessages = contactsList.length;
-
-      const recentBookings = [...bookingsList]
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 5);
-
-      const popularDestinations: any[] = [];
-      const groupDest: Record<string, number> = {};
-      bookingsList.forEach((b: any) => {
-        const title = b.destinationTitle || 'Unknown';
-        groupDest[title] = (groupDest[title] || 0) + 1;
-      });
-      Object.keys(groupDest).forEach((title) => {
-        popularDestinations.push({ _id: title, count: groupDest[title] });
-      });
-      popularDestinations.sort((a, b) => b.count - a.count);
-
-      const newBookingsThisYear = bookingsList.filter((b: any) => 
-        new Date(b.createdAt).getTime() >= startOfYear.getTime()
-      ).length;
-
-      return NextResponse.json({
-        stats: {
-          totalBookings,
-          totalDestinations,
-          totalTestimonials,
-          totalBlogPosts,
-          totalMessages,
-          newBookingsThisYear,
-        },
-        recentBookings,
-        popularDestinations: popularDestinations.slice(0, 5),
-        monthlyTrends: [],
-      });
+    if (
+      bookingsCount.error || destinationsCount.error || testimonialsApproved.error ||
+      blogPublished.error || messagesCount.error || recent.error ||
+      newThisYear.error || popular.error || trends.error
+    ) {
+      throw (
+        bookingsCount.error || destinationsCount.error || testimonialsApproved.error ||
+        blogPublished.error || messagesCount.error || recent.error ||
+        newThisYear.error || popular.error || trends.error
+      );
     }
+
+    const group: Record<string, number> = {};
+    for (const b of popular.data || []) {
+      const title = String((b as { destination_title?: string }).destination_title || 'Unknown');
+      group[title] = (group[title] || 0) + 1;
+    }
+    const popularDestinations = Object.entries(group)
+      .map(([_id, count]) => ({ _id, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const monthMap = new Map<string, { year: number; month: number; count: number; revenue: number }>();
+    for (const b of trends.data || []) {
+      const row = b as { created_at?: string; total_price?: number };
+      const d = new Date(row.created_at || '');
+      if (Number.isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      const entry = monthMap.get(key) || { year: d.getFullYear(), month: d.getMonth() + 1, count: 0, revenue: 0 };
+      entry.count += 1;
+      entry.revenue += Number(row.total_price || 0);
+      monthMap.set(key, entry);
+    }
+    const monthlyTrends = [...monthMap.values()].sort((a, b) =>
+      a.year === b.year ? a.month - b.month : a.year - b.year
+    );
+
+    return NextResponse.json({
+      stats: {
+        totalBookings: bookingsCount.count ?? 0,
+        totalDestinations: destinationsCount.count ?? 0,
+        totalTestimonials: testimonialsApproved.count ?? 0,
+        totalBlogPosts: blogPublished.count ?? 0,
+        totalMessages: messagesCount.count ?? 0,
+        newBookingsThisYear: newThisYear.count ?? 0,
+      },
+      recentBookings: (recent.data || []).map(toApiRow),
+      popularDestinations,
+      monthlyTrends,
+    });
   } catch (error) {
     console.error('GET stats error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

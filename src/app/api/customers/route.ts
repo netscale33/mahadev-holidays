@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Booking from '@/lib/models/Booking';
-import Contact from '@/lib/models/Contact';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -16,59 +14,64 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const exportCsv = searchParams.get('export') === 'csv';
 
-    const [bookingCustomers, contactCustomers] = await Promise.all([
-      Booking.find().select('name email phone createdAt').lean(),
-      Contact.find().select('name email phone createdAt').lean(),
+    const db = getSupabaseAdmin();
+    const [{ data: bookingRows, error: bErr }, { data: contactRows, error: cErr }] = await Promise.all([
+      db.from('bookings').select('name,email,phone,created_at'),
+      db.from('contacts').select('name,email,phone,created_at'),
     ]);
+
+    if (bErr) throw bErr;
+    if (cErr) throw cErr;
 
     const emailMap = new Map<string, {
       name: string;
       email: string;
       phone: string;
-      firstContact: Date;
+      firstContact: string;
       bookingCount: number;
       messageCount: number;
     }>();
 
-    for (const b of bookingCustomers) {
+    for (const b of (bookingRows || []) as { name: string; email: string; phone: string; created_at: string }[]) {
+      if (!b.email) continue;
       const key = b.email.toLowerCase();
       const existing = emailMap.get(key);
       if (existing) {
         existing.bookingCount++;
-        if (new Date(b.createdAt) < new Date(existing.firstContact)) {
-          existing.firstContact = b.createdAt;
+        if (new Date(b.created_at) < new Date(existing.firstContact)) {
+          existing.firstContact = b.created_at;
         }
       } else {
         emailMap.set(key, {
           name: b.name,
           email: b.email,
           phone: b.phone || '',
-          firstContact: b.createdAt,
+          firstContact: b.created_at,
           bookingCount: 1,
           messageCount: 0,
         });
       }
     }
 
-    for (const c of contactCustomers) {
+    for (const c of (contactRows || []) as { name: string; email: string; phone: string; created_at: string }[]) {
+      if (!c.email) continue;
       const key = c.email.toLowerCase();
       const existing = emailMap.get(key);
       if (existing) {
         existing.messageCount++;
-        if (c.createdAt && new Date(c.createdAt) < new Date(existing.firstContact)) {
-          existing.firstContact = c.createdAt;
+        if (c.created_at && new Date(c.created_at) < new Date(existing.firstContact)) {
+          existing.firstContact = c.created_at;
         }
       } else {
         emailMap.set(key, {
           name: c.name,
           email: c.email,
           phone: c.phone || '',
-          firstContact: c.createdAt,
+          firstContact: c.created_at,
           bookingCount: 0,
           messageCount: 1,
         });
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
       const rows = customers
         .map(
           (c) =>
-            `"${c.name}","${c.email}","${c.phone}","${c.firstContact.toISOString().split('T')[0]}",${c.bookingCount},${c.messageCount}`
+            `"${c.name}","${c.email}","${c.phone}","${new Date(c.firstContact).toISOString().split('T')[0]}",${c.bookingCount},${c.messageCount}`
         )
         .join('\n');
 

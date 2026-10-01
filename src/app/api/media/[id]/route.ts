@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Media from '@/lib/models/Media';
+import { getSupabaseAdmin, toApiRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -18,12 +17,33 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
+    const db = getSupabaseAdmin();
 
-    const media = await Media.findByIdAndDelete(id);
-    if (!media) {
+    const { data: row } = await db.from('media').select('url').eq('id', id).maybeSingle();
+
+    const { data, error } = await db
+      .from('media')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+
+    if (error || !data) {
       return NextResponse.json({ error: 'Media not found' }, { status: 404 });
+    }
+
+    // Best-effort: also remove the file from the `media` storage bucket
+    try {
+      const url = String((row as { url?: string } | null)?.url || '');
+      const marker = '/storage/v1/object/public/media/';
+      const idx = url.indexOf(marker);
+      if (idx !== -1) {
+        const path = url.slice(idx + marker.length).split('?')[0];
+        if (path) await db.storage.from('media').remove([path]);
+      }
+    } catch {
+      // ignore storage cleanup errors
     }
 
     return NextResponse.json({ message: 'Media deleted successfully' });

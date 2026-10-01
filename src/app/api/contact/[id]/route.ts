@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Contact from '@/lib/models/Contact';
+import { getSupabaseAdmin, toApiRow, toTableRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -18,15 +17,15 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
+    const db = getSupabaseAdmin();
+    const { data, error } = await db.from('contacts').select('*').eq('id', id).maybeSingle();
 
-    const message = await Contact.findById(id);
-    if (!message) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message });
+    return NextResponse.json({ message: toApiRow(data) });
   } catch (error) {
     console.error('GET contact message error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -42,20 +41,22 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
     const body = await request.json();
+    const db = getSupabaseAdmin();
 
-    const message = await Contact.findByIdAndUpdate(id, body, {
-      new: true,
-      runValidators: true,
-    });
+    const { data, error } = await db
+      .from('contacts')
+      .update(toTableRow('contacts', body))
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (!message) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message });
+    return NextResponse.json({ message: toApiRow(data) });
   } catch (error) {
     console.error('PUT contact message error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -71,11 +72,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
+      .from('contacts')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
 
-    const message = await Contact.findByIdAndDelete(id);
-    if (!message) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 

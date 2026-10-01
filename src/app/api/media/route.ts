@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Media from '@/lib/models/Media';
+import { getSupabaseAdmin, toApiRow, toTableRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -11,20 +10,24 @@ function isAuthenticated(request: NextRequest): boolean {
 
 export async function GET(request: NextRequest) {
   try {
-    await connect();
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const from = (page - 1) * limit;
 
-    const filter: Record<string, unknown> = {};
-    if (type && ['image', 'video'].includes(type)) filter.type = type;
+    const db = getSupabaseAdmin();
+    let query = db.from('media').select('*', { count: 'exact' });
+    if (type && ['image', 'video'].includes(type)) query = query.eq('type', type);
 
-    const skip = (page - 1) * limit;
-    const [media, total] = await Promise.all([
-      Media.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Media.countDocuments(filter),
-    ]);
+    const { data, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(from, from + limit - 1);
+
+    if (error) throw error;
+
+    const media = (data || []).map(toApiRow);
+    const total = count ?? media.length;
 
     return NextResponse.json({
       media,
@@ -42,7 +45,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const body = await request.json();
 
     if (!body.url || !body.alt || !body.type) {
@@ -53,8 +55,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid media type' }, { status: 400 });
     }
 
-    const media = await Media.create(body);
-    return NextResponse.json({ media }, { status: 201 });
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
+      .from('media')
+      .insert(toTableRow('media', body))
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ media: toApiRow(data) }, { status: 201 });
   } catch (error) {
     console.error('POST media error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

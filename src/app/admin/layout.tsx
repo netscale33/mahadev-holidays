@@ -9,13 +9,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
-    if (!token) {
-      setIsAuthenticated(false);
-      router.push("/admin/login");
-    } else {
-      setIsAuthenticated(true);
+    async function check() {
+      const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
+      if (!token) {
+        setIsAuthenticated(false);
+        router.push("/admin/login");
+        return;
+      }
+      try {
+        const res = await fetch("/api/auth/verify", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("invalid");
+        setIsAuthenticated(true);
+      } catch {
+        localStorage.removeItem("admin_token");
+        sessionStorage.removeItem("admin_token");
+        setIsAuthenticated(false);
+        router.push("/admin/login");
+      }
     }
+    check();
   }, [router]);
 
   if (pathname === "/admin/login") {

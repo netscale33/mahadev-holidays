@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
-import { connect } from '@/lib/db';
-import User from '@/lib/models/User';
+import { getSupabaseAdmin, toApiRow } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,29 +14,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
     }
 
-    await connect();
-    const user = await User.findById(payload.userId).select('-password');
-
-    if (!user) {
-      const envUsername = process.env.ADMIN_USERNAME;
-      if (payload.userId === envUsername) {
-        return NextResponse.json({
-          user: { username: envUsername, role: 'super-admin' },
-        });
-      }
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const envUsername = process.env.ADMIN_USERNAME;
+    if (envUsername && payload.userId === envUsername) {
+      return NextResponse.json({
+        user: { username: envUsername, role: 'super-admin' },
+      });
     }
 
-    return NextResponse.json({
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        avatar: user.avatar,
-      },
-    });
+    try {
+      const db = getSupabaseAdmin();
+      const { data: user, error } = await db
+        .from('users')
+        .select('id,name,email,username,role,avatar')
+        .eq('id', payload.userId)
+        .maybeSingle();
+
+      if (error || !user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ user: toApiRow(user as Record<string, unknown>) });
+    } catch {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
   } catch (error) {
     console.error('Verify error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

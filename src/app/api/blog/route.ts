@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Blog from '@/lib/models/Blog';
+import { getSupabaseAdmin, toApiRow, toTableRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -11,29 +10,31 @@ function isAuthenticated(request: NextRequest): boolean {
 
 export async function GET(request: NextRequest) {
   try {
-    await connect();
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const from = (page - 1) * limit;
 
-    const filter: Record<string, unknown> = {};
+    const db = getSupabaseAdmin();
+    let query = db.from('blog_posts').select('*', { count: 'exact' });
 
-    if (category) filter.category = category;
+    if (category) query = query.eq('category', category);
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { excerpt: { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } },
-      ];
+      query = query.or(
+        `title.ilike.%${search}%,excerpt.ilike.%${search}%,content.ilike.%${search}%`
+      );
     }
 
-    const skip = (page - 1) * limit;
-    const [posts, total] = await Promise.all([
-      Blog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Blog.countDocuments(filter),
-    ]);
+    const { data, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(from, from + limit - 1);
+
+    if (error) throw error;
+
+    const posts = (data || []).map(toApiRow);
+    const total = count ?? posts.length;
 
     return NextResponse.json({
       posts,
@@ -51,20 +52,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const body = await request.json();
 
     if (!body.title || !body.slug || !body.excerpt || !body.content || !body.coverImage || !body.author || !body.category) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const existing = await Blog.findOne({ slug: body.slug });
+    const db = getSupabaseAdmin();
+    const { data: existing } = await db
+      .from('blog_posts')
+      .select('id')
+      .eq('slug', body.slug)
+      .maybeSingle();
+
     if (existing) {
       return NextResponse.json({ error: 'A post with this slug already exists' }, { status: 409 });
     }
 
-    const post = await Blog.create(body);
-    return NextResponse.json({ post }, { status: 201 });
+    const { data, error } = await db
+      .from('blog_posts')
+      .insert(toTableRow('blog_posts', body))
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ post: toApiRow(data) }, { status: 201 });
   } catch (error) {
     console.error('POST blog error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -91,8 +91,27 @@ function DashboardSection() {
         const res = await fetch("/api/stats", { headers });
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
-        setStats({ totalDestinations: data.totalDestinations ?? 24, activeBookings: data.activeBookings ?? 142, totalTestimonials: data.totalTestimonials ?? 87, blogPosts: data.blogPosts ?? 36, revenue: data.revenue ?? 28450000, totalBookings: data.totalBookings ?? 189 });
-        setRecentBookings(data.recentBookings ?? dummyRecentBookings);
+        const s = data.stats ?? data;
+        setStats({
+          totalDestinations: s.totalDestinations ?? 0,
+          activeBookings: s.totalBookings ?? 0,
+          totalTestimonials: s.totalTestimonials ?? 0,
+          blogPosts: s.totalBlogPosts ?? 0,
+          revenue: (data.recentBookings ?? []).reduce(
+            (sum: number, b: any) => sum + (Number(b.totalPrice) || 0),
+            0
+          ),
+          totalBookings: s.totalBookings ?? 0,
+        });
+        setRecentBookings(
+          (data.recentBookings ?? []).map((b: any) => ({
+            ...b,
+            id: b.id || b._id,
+            destinationTitle: b.destinationTitle || b.destinationtitle || "—",
+            travelDate: b.travelDate || b.traveldate,
+            totalPrice: b.totalPrice || b.totalprice || 0,
+          }))
+        );
       } catch {
         setRecentBookings(dummyRecentBookings);
       } finally {
@@ -321,7 +340,25 @@ function DestinationsSection() {
   }
 
   function handleImageUpload(files: File[]) {
-    setForm((prev: any) => ({ ...prev, images: [...prev.images, ...files.map((f) => URL.createObjectURL(f))] }));
+    (async () => {
+      try {
+        const token = localStorage.getItem("admin_token");
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const urls: string[] = [];
+        for (const f of files) {
+          const formData = new FormData();
+          formData.append("file", f);
+          const res = await fetch("/api/upload", { method: "POST", headers, body: formData });
+          if (!res.ok) throw new Error("upload failed");
+          const data = await res.json();
+          urls.push(data.url);
+        }
+        setForm((prev: any) => ({ ...prev, images: [...prev.images, ...urls] }));
+      } catch {
+        setForm((prev: any) => ({ ...prev, images: [...prev.images, ...files.map((f) => URL.createObjectURL(f))] }));
+      }
+    })();
   }
 
   const columns = [
@@ -578,7 +615,8 @@ function MediaSection() {
       const res = await fetch("/api/media", { headers });
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
-      setMedia(data);
+      const list = normalizeId(Array.isArray(data) ? data : data.media ?? data.data ?? []);
+      setMedia(list);
     } catch {
       setMedia(dummyMedia);
     } finally {
@@ -589,9 +627,50 @@ function MediaSection() {
   const filtered = filter === "all" ? media : media.filter((m: any) => m.type === filter);
 
   function handleUpload(files: File[]) {
-    const newMedia = files.map((f, i) => ({ id: `media-${Date.now()}-${i}`, url: URL.createObjectURL(f), alt: f.name.replace(/\.[^/.]+$/, ""), type: f.type.startsWith("video") ? "video" : "image", size: f.size, uploadedAt: new Date().toISOString() }));
-    setMedia((prev: any) => [...newMedia, ...prev]);
-    setUploadModal(false);
+    (async () => {
+      try {
+        const token = localStorage.getItem("admin_token");
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const uploaded: any[] = [];
+        for (const f of files) {
+          const formData = new FormData();
+          formData.append("file", f);
+          const upRes = await fetch("/api/upload", { method: "POST", headers, body: formData });
+          if (!upRes.ok) throw new Error("upload failed");
+          const up = await upRes.json();
+          const saveRes = await fetch("/api/media", {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: up.url,
+              alt: up.alt || f.name.replace(/\.[^/.]+$/, ""),
+              type: up.type || (f.type.startsWith("video") ? "video" : "image"),
+              size: f.size,
+            }),
+          });
+          if (saveRes.ok) {
+            const saved = await saveRes.json();
+            uploaded.push(normalizeId(saved.media ?? saved));
+          } else {
+            uploaded.push({
+              id: `media-${Date.now()}-${uploaded.length}`,
+              url: up.url,
+              alt: f.name.replace(/\.[^/.]+$/, ""),
+              type: up.type || "image",
+              size: f.size,
+              uploadedAt: new Date().toISOString(),
+            });
+          }
+        }
+        setMedia((prev: any) => [...uploaded, ...prev]);
+      } catch {
+        const fallback = files.map((f, i) => ({ id: `media-${Date.now()}-${i}`, url: URL.createObjectURL(f), alt: f.name.replace(/\.[^/.]+$/, ""), type: f.type.startsWith("video") ? "video" : "image", size: f.size, uploadedAt: new Date().toISOString() }));
+        setMedia((prev: any) => [...fallback, ...prev]);
+      } finally {
+        setUploadModal(false);
+      }
+    })();
   }
 
   function copyUrl(url: string, id: string) {
@@ -740,7 +819,8 @@ function CustomersSection() {
       const res = await fetch("/api/customers", { headers });
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
-      setCustomers(data);
+      const list = Array.isArray(data) ? data : data.customers ?? [];
+      setCustomers(list);
     } catch {
       setCustomers(dummyCustomers);
     } finally {
@@ -1014,20 +1094,63 @@ function InquiriesSection() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem("mahadev_inquiries");
-    if (raw) {
+    async function load() {
+      const local: any[] = [];
       try {
-        setInquiries(JSON.parse(raw));
+        const raw = localStorage.getItem("mahadev_inquiries");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) local.push(...parsed);
+        }
       } catch {
-        setInquiries([]);
+        // ignore corrupt local data
+      }
+      try {
+        const token = localStorage.getItem("admin_token");
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch("/api/contact?limit=100", { headers });
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        const msgs = Array.isArray(data) ? data : data.messages ?? [];
+        const mapped = msgs.map((m: any) => ({
+          id: String(m.id || m._id),
+          _api: true,
+          name: m.name,
+          email: m.email,
+          phone: m.phone || "",
+          destination: String(m.subject || "").replace(/^Inquiry:\s*/, "") || "—",
+          message: m.message,
+          createdAt: m.createdAt,
+        }));
+        const localIds = new Set(local.map((i: any) => i.id));
+        setInquiries([...mapped, ...local.filter((i: any) => !localIds.has(i.id))]);
+      } catch {
+        setInquiries(local);
       }
     }
+    load();
   }, []);
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    const target = inquiries.find((i) => i.id === id);
+    if (target?._api) {
+      try {
+        const token = localStorage.getItem("admin_token");
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        await fetch(`/api/contact/${id}`, { method: "DELETE", headers });
+      } catch {}
+    }
     const updated = inquiries.filter((i) => i.id !== id);
     setInquiries(updated);
-    localStorage.setItem("mahadev_inquiries", JSON.stringify(updated));
+    try {
+      const raw = localStorage.getItem("mahadev_inquiries");
+      if (raw) {
+        const list = JSON.parse(raw).filter((i: any) => i.id !== id);
+        localStorage.setItem("mahadev_inquiries", JSON.stringify(list));
+      }
+    } catch {}
     setDeleteId(null);
   }
 
@@ -1141,14 +1264,45 @@ function ProfileSection() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isEnvAdmin, setIsEnvAdmin] = useState(false);
 
   useEffect(() => {
-    // Load current username from localStorage
-    const savedUser = localStorage.getItem("admin_username") || "@vishalchouhan";
-    setUsername(savedUser);
+    try {
+      const raw = localStorage.getItem("admin_user");
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (u?.username) setUsername(u.username);
+        if (!u?.id) setIsEnvAdmin(true);
+      } else {
+        const savedUser = localStorage.getItem("admin_username") || "@vishalchouhan";
+        setUsername(savedUser);
+        setIsEnvAdmin(true);
+      }
+    } catch {
+      setUsername("@vishalchouhan");
+      setIsEnvAdmin(true);
+    }
   }, []);
 
-  function handleSaveProfile(e: React.FormEvent) {
+  async function authedHeaders(json = false): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+    const token = localStorage.getItem("admin_token");
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (json) headers["Content-Type"] = "application/json";
+    return headers;
+  }
+
+  function currentUserId(): string | null {
+    try {
+      const raw = localStorage.getItem("admin_user");
+      if (!raw) return null;
+      return JSON.parse(raw)?.id || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -1158,27 +1312,39 @@ function ProfileSection() {
       return;
     }
 
+    const userId = currentUserId();
+    if (!userId) {
+      setError("Super-admin login is managed on the server. Ask hosting support to update ADMIN_USERNAME.");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      localStorage.setItem("admin_username", username.trim());
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: await authedHeaders(true),
+        body: JSON.stringify({ username: username.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Update failed");
+      try {
+        localStorage.setItem("admin_user", JSON.stringify({ ...JSON.parse(localStorage.getItem("admin_user") || "{}"), username: data.username || username.trim() }));
+      } catch {}
       setSuccess("Username updated successfully!");
+    } catch (err: any) {
+      setError(err?.message || "Update failed");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   }
 
-  function handleChangePassword(e: React.FormEvent) {
+  async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
-      setError("Please fill out all password fields");
-      return;
-    }
-
-    const savedPass = localStorage.getItem("admin_password") || "@vishalchouhantravel77";
-    if (currentPassword !== savedPass) {
-      setError("Current password is incorrect");
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      setError("Please fill out new password fields");
       return;
     }
 
@@ -1192,19 +1358,39 @@ function ProfileSection() {
       return;
     }
 
+    const userId = currentUserId();
+    if (!userId) {
+      setError("Super-admin password is managed on the server. Ask hosting support to update ADMIN_PASSWORD.");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      localStorage.setItem("admin_password", newPassword);
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: await authedHeaders(true),
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Update failed");
       setSuccess("Password updated successfully! Use your new password on your next login.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+    } catch (err: any) {
+      setError(err?.message || "Update failed");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
+      {isEnvAdmin && (
+        <div className="bg-gold/10 text-primary text-sm px-4 py-3 rounded-xl border border-gold/20">
+          You are signed in as the server super-admin. Username/password changes for this account are managed on the server (hosting env). User accounts created below can be edited freely.
+        </div>
+      )}
       <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-primary/5 border border-gold/10">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">

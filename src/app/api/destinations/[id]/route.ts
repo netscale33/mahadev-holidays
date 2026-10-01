@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Destination from '@/lib/models/Destination';
+import { getSupabaseAdmin, toApiRow, toTableRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
-import { readDb, saveDestination, deleteDestination } from '@/lib/jsonDb';
 
 function isAuthenticated(request: NextRequest): boolean {
   const token = getTokenFromHeader(request.headers.get('Authorization') || undefined);
@@ -10,34 +8,33 @@ function isAuthenticated(request: NextRequest): boolean {
   return verifyToken(token) !== null;
 }
 
+async function findByIdOrSlug(db: ReturnType<typeof getSupabaseAdmin>, id: string) {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  if (isUuid) {
+    const { data } = await db.from('destinations').select('*').eq('id', id).maybeSingle();
+    if (data) return data;
+  }
+  const { data } = await db.from('destinations').select('*').eq('slug', id).maybeSingle();
+  return data;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
   try {
-    await connect();
-
-    const destination = await Destination.findOne({
-      $or: [{ _id: id }, { slug: id }],
-    });
+    const { id } = await params;
+    const db = getSupabaseAdmin();
+    const destination = await findByIdOrSlug(db, id);
 
     if (!destination) {
       return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ destination });
+    return NextResponse.json({ destination: toApiRow(destination) });
   } catch (error) {
-    console.warn('MongoDB connection failed in GET destination details, falling back to local JSON DB:', error);
-    
-    const allLocal = readDb().destinations || [];
-    const destination = allLocal.find((d: any) => String(d.id) === String(id) || d.slug === id);
-    
-    if (!destination) {
-      return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ destination });
+    console.error('GET destination error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -52,39 +49,20 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
+    const db = getSupabaseAdmin();
 
-    try {
-      await connect();
-      const destination = await Destination.findByIdAndUpdate(id, body, {
-        new: true,
-        runValidators: true,
-      });
+    const { data, error } = await db
+      .from('destinations')
+      .update(toTableRow('destinations', body))
+      .eq('id', id)
+      .select()
+      .single();
 
-      if (!destination) {
-        return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
-      }
-
-      return NextResponse.json({ destination });
-    } catch (dbError) {
-      console.warn('MongoDB connection failed in PUT destination, falling back to local JSON DB:', dbError);
-      
-      const allLocal = readDb().destinations || [];
-      const index = allLocal.findIndex((d: any) => String(d.id) === String(id));
-      if (index === -1) {
-        return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
-      }
-
-      const destination = {
-        ...allLocal[index],
-        ...body,
-        id,
-        _id: id,
-        updatedAt: new Date().toISOString()
-      };
-
-      saveDestination(destination);
-      return NextResponse.json({ destination });
+    if (error || !data) {
+      return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
     }
+
+    return NextResponse.json({ destination: toApiRow(data) });
   } catch (error) {
     console.error('PUT destination error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -101,27 +79,20 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const db = getSupabaseAdmin();
 
-    try {
-      await connect();
-      const destination = await Destination.findByIdAndDelete(id);
-      if (!destination) {
-        return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
-      }
+    const { data, error } = await db
+      .from('destinations')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
 
-      return NextResponse.json({ message: 'Destination deleted successfully' });
-    } catch (dbError) {
-      console.warn('MongoDB connection failed in DELETE destination, falling back to local JSON DB:', dbError);
-      
-      const allLocal = readDb().destinations || [];
-      const exists = allLocal.some((d: any) => String(d.id) === String(id));
-      if (!exists) {
-        return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
-      }
-
-      deleteDestination(id);
-      return NextResponse.json({ message: 'Destination deleted successfully' });
+    if (error || !data) {
+      return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
     }
+
+    return NextResponse.json({ message: 'Destination deleted successfully' });
   } catch (error) {
     console.error('DELETE destination error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

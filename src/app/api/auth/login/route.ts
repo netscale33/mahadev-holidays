@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import User from '@/lib/models/User';
+import { getSupabaseAdmin, toApiRow } from '@/lib/supabase';
 import { generateToken, comparePassword } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -17,45 +16,38 @@ export async function POST(request: NextRequest) {
     const envUsername = process.env.ADMIN_USERNAME || 'admin';
     const envPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
-    console.log('Login attempt:', { username, password, envUsername, envPassword, match: username === envUsername && password === envPassword });
-
     if (username === envUsername && password === envPassword) {
       const token = generateToken({ userId: username, email: username, role: 'super-admin' });
       return NextResponse.json({ token, user: { username, role: 'super-admin' } });
     }
 
     try {
-      await connect();
-      const dbUser = await User.findOne({
-        $or: [{ username }, { email: username }],
-      }).select('+password');
+      const db = getSupabaseAdmin();
+      const { data: dbUser, error } = await db
+        .from('users')
+        .select('*')
+        .or(`username.eq.${username},email.eq.${username}`)
+        .maybeSingle();
 
-      if (!dbUser) {
+      if (error || !dbUser) {
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
 
-      const isValid = await comparePassword(password, dbUser.password);
+      const isValid = await comparePassword(password, String(dbUser.password));
       if (!isValid) {
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
 
       const token = generateToken({
-        userId: dbUser._id.toString(),
-        email: dbUser.email,
-        role: dbUser.role,
+        userId: String(dbUser.id),
+        email: String(dbUser.email),
+        role: String(dbUser.role),
       });
 
-      return NextResponse.json({
-        token,
-        user: {
-          id: dbUser._id,
-          name: dbUser.name,
-          email: dbUser.email,
-          username: dbUser.username,
-          role: dbUser.role,
-          avatar: dbUser.avatar,
-        },
-      });
+      const apiUser = toApiRow(dbUser as Record<string, unknown>);
+      const { password: _omit, ...safeUser } = apiUser;
+
+      return NextResponse.json({ token, user: safeUser });
     } catch {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }

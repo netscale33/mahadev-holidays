@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Booking from '@/lib/models/Booking';
+import { getSupabaseAdmin, toApiRow, toTableRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -8,6 +7,8 @@ function isAuthenticated(request: NextRequest): boolean {
   if (!token) return false;
   return verifyToken(token) !== null;
 }
+
+const VALID_STATUS = ['new', 'in-progress', 'confirmed', 'completed', 'cancelled'];
 
 export async function GET(
   request: NextRequest,
@@ -18,15 +19,15 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
+    const db = getSupabaseAdmin();
+    const { data, error } = await db.from('bookings').select('*').eq('id', id).maybeSingle();
 
-    const booking = await Booking.findById(id);
-    if (!booking) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ booking });
+    return NextResponse.json({ booking: toApiRow(data) });
   } catch (error) {
     console.error('GET booking error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -42,24 +43,26 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
     const body = await request.json();
 
-    if (body.status && !['new', 'in-progress', 'confirmed', 'completed', 'cancelled'].includes(body.status)) {
+    if (body.status && !VALID_STATUS.includes(body.status)) {
       return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
     }
 
-    const booking = await Booking.findByIdAndUpdate(id, body, {
-      new: true,
-      runValidators: true,
-    });
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
+      .from('bookings')
+      .update(toTableRow('bookings', body))
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (!booking) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ booking });
+    return NextResponse.json({ booking: toApiRow(data) });
   } catch (error) {
     console.error('PUT booking error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -75,11 +78,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { id } = await params;
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
+      .from('bookings')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
 
-    const booking = await Booking.findByIdAndDelete(id);
-    if (!booking) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 

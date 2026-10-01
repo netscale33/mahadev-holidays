@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connect } from '@/lib/db';
-import Contact from '@/lib/models/Contact';
+import { getSupabaseAdmin, toApiRow, toTableRow } from '@/lib/supabase';
 import { getTokenFromHeader, verifyToken } from '@/lib/auth';
 
 function isAuthenticated(request: NextRequest): boolean {
@@ -15,16 +14,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connect();
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
-    const skip = (page - 1) * limit;
+    const from = (page - 1) * limit;
 
-    const [messages, total] = await Promise.all([
-      Contact.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Contact.countDocuments(),
-    ]);
+    const db = getSupabaseAdmin();
+    const { data, count, error } = await db
+      .from('contacts')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, from + limit - 1);
+
+    if (error) throw error;
+
+    const messages = (data || []).map(toApiRow);
+    const total = count ?? messages.length;
 
     return NextResponse.json({
       messages,
@@ -38,15 +43,22 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await connect();
     const body = await request.json();
 
     if (!body.name || !body.email || !body.subject || !body.message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const message = await Contact.create(body);
-    return NextResponse.json({ message }, { status: 201 });
+    const db = getSupabaseAdmin();
+    const { data, error } = await db
+      .from('contacts')
+      .insert(toTableRow('contacts', body))
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ message: toApiRow(data) }, { status: 201 });
   } catch (error) {
     console.error('POST contact error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

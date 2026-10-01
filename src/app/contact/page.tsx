@@ -98,6 +98,24 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      subject: formData.destination ? `Inquiry: ${formData.destination}` : "General Inquiry",
+      message: formData.message || `Preferred destination: ${formData.destination || "—"}`,
+    };
+
+    try {
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      // API save failed — still continue with WhatsApp + local backup below
+    }
+
     setTimeout(() => {
       // Persist in localStorage to support completely serverless offline deployment
       const existing = localStorage.getItem("mahadev_inquiries");
