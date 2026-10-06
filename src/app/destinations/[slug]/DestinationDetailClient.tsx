@@ -1204,9 +1204,9 @@ export default function DestinationDetailClient() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <SectionHeader tag="Book Now" title="Plan Your Trip" subtitle="Chat with our travel experts on WhatsApp and get a personalized itinerary in minutes." light />
+              <SectionHeader tag="Book Now" title="Plan Your Trip" subtitle="Chat with our travel experts on WhatsApp and get a personalized itinerary in minutes." />
             </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/10 flex flex-col items-center justify-center text-center">
+            <div className="bg-white rounded-2xl p-6 md:p-8 border border-gold/15 shadow-xl flex flex-col items-center justify-center text-center">
               <MessageCircle className="w-16 h-16 text-green-400 mb-4" />
               <p className="text-primary/70 text-sm mb-6 max-w-sm">Skip the form! Message us directly on WhatsApp for instant assistance.</p>
               <WhatsAppButton slug={slug} name={dest.name} />
