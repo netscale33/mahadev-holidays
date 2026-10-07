@@ -875,6 +875,7 @@ export default function DestinationDetailClient() {
                 description: found.description || base0.description,
                 longDescription: found.longDescription || found.description || base0.longDescription,
                 images: liveImages ? liveImages.map((img: string) => ({ src: img, alt: found.title })) : base0.images,
+                itinerary: found.itinerary?.length ? found.itinerary : base0.itinerary,
                 pricing: livePricing,
                 inclusions: found.inclusions?.length ? found.inclusions : base0.inclusions,
                 exclusions: found.exclusions?.length ? found.exclusions : base0.exclusions,
@@ -1135,7 +1136,10 @@ export default function DestinationDetailClient() {
                     transition={{ duration: 0.3 }}
                     className="px-5 pb-5"
                   >
-                    <p className="text-primary/60 text-sm mb-4">{day.description}</p>
+                    <div
+                      className="rich-text-sm text-primary/60 text-sm mb-4"
+                      dangerouslySetInnerHTML={{ __html: day.description }}
+                    />
                     <div className="flex flex-wrap gap-2 mb-4">
                       {day.activities.map((activity, i) => (
                         <span key={i} className="px-3 py-1.5 bg-primary/5 rounded-full text-xs text-primary/60">{activity}</span>

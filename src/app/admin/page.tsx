@@ -210,7 +210,7 @@ function DestinationsSection() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ title: "", slug: "", location: "", description: "", longDescription: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", isAvailable: true, isFeatured: false, images: [] });
+  const [form, setForm] = useState<any>({ title: "", slug: "", location: "", description: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", isAvailable: true, isFeatured: false, images: [], itinerary: [] });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => { fetchDestinations(); }, []);
@@ -243,16 +243,51 @@ function DestinationsSection() {
     }
   }
 
+  function stripHtml(html: string): string {
+    return String(html || "").replace(/<\/?[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function emptyDay() {
+    return { title: "", description: "", activitiesText: "", breakfast: false, lunch: false, dinner: false, accommodation: "" };
+  }
+
+  function toEditableDay(d: any) {
+    return {
+      title: d.title || "",
+      description: d.description || "",
+      activitiesText: Array.isArray(d.activities) ? d.activities.join("\n") : "",
+      breakfast: !!d.meals?.breakfast,
+      lunch: !!d.meals?.lunch,
+      dinner: !!d.meals?.dinner,
+      accommodation: d.accommodation || "",
+    };
+  }
+
+  function addDay() {
+    setForm((prev: any) => ({ ...prev, itinerary: [...(prev.itinerary || []), emptyDay()] }));
+  }
+
+  function removeDay(index: number) {
+    setForm((prev: any) => ({ ...prev, itinerary: (prev.itinerary || []).filter((_: any, i: number) => i !== index) }));
+  }
+
+  function updateDay(index: number, field: string, value: any) {
+    setForm((prev: any) => ({
+      ...prev,
+      itinerary: (prev.itinerary || []).map((d: any, i: number) => (i === index ? { ...d, [field]: value } : d)),
+    }));
+  }
+
   function openAddModal() {
     setEditingId(null);
-    setForm({ title: "", slug: "", location: "", description: "", longDescription: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", isAvailable: true, isFeatured: false, images: [] });
+    setForm({ title: "", slug: "", location: "", description: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", isAvailable: true, isFeatured: false, images: [], itinerary: [] });
     setFormErrors({});
     setModalOpen(true);
   }
 
   function openEditModal(dest: any) {
     setEditingId(dest.id);
-    setForm({ title: dest.title || "", slug: dest.slug || "", location: dest.location || "", description: dest.description || "", longDescription: dest.longDescription || "", price: String(dest.price || ""), originalPrice: String(dest.originalPrice || ""), duration: dest.duration || "", category: dest.category || "", tags: Array.isArray(dest.tags) ? dest.tags.join(", ") : "", inclusions: Array.isArray(dest.inclusions) ? dest.inclusions.join("\n") : "", exclusions: Array.isArray(dest.exclusions) ? dest.exclusions.join("\n") : "", isAvailable: dest.isAvailable ?? true, isFeatured: dest.isFeatured ?? false, images: dest.images || [] });
+    setForm({ title: dest.title || "", slug: dest.slug || "", location: dest.location || "", description: dest.longDescription || dest.longdescription || dest.description || "", price: String(dest.price || ""), originalPrice: String(dest.originalPrice || dest.originalprice || ""), duration: dest.duration || "", category: dest.category || "", tags: Array.isArray(dest.tags) ? dest.tags.join(", ") : "", inclusions: Array.isArray(dest.inclusions) ? dest.inclusions.join("\n") : "", exclusions: Array.isArray(dest.exclusions) ? dest.exclusions.join("\n") : "", isAvailable: dest.isAvailable ?? dest.isavailable ?? true, isFeatured: dest.isFeatured ?? dest.isfeatured ?? false, images: dest.images || (dest.image ? [dest.image] : []), itinerary: Array.isArray(dest.itinerary) ? dest.itinerary.map(toEditableDay) : [] });
     setFormErrors({});
     setModalOpen(true);
   }
@@ -271,7 +306,7 @@ function DestinationsSection() {
     if (!form.price || Number(form.price) <= 0) errors.price = "Valid price is required";
     if (!form.duration.trim()) errors.duration = "Duration is required";
     if (!form.category) errors.category = "Category is required";
-    if (!form.description.trim()) errors.description = "Description is required";
+    if (!stripHtml(form.description)) errors.description = "Description is required";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -279,13 +314,28 @@ function DestinationsSection() {
   async function handleSave() {
     if (!validate()) return;
     setSaving(true);
-    const payload = { 
-      ...form, 
-      price: Number(form.price), 
-      originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined, 
-      tags: form.tags.split(",").map((t: string) => t.trim()).filter(Boolean), 
-      inclusions: form.inclusions.split("\n").filter(Boolean), 
-      exclusions: form.exclusions.split("\n").filter(Boolean) 
+    const fullDescription = String(form.description || "");
+    const plainExcerpt = stripHtml(fullDescription).slice(0, 220);
+    const itinerary = (form.itinerary || [])
+      .filter((d: any) => d.title.trim() || stripHtml(d.description))
+      .map((d: any, i: number) => ({
+        day: i + 1,
+        title: d.title.trim() || `Day ${i + 1}`,
+        description: d.description,
+        activities: String(d.activitiesText || "").split("\n").map((a: string) => a.trim()).filter(Boolean),
+        meals: { breakfast: !!d.breakfast, lunch: !!d.lunch, dinner: !!d.dinner },
+        accommodation: d.accommodation.trim(),
+      }));
+    const payload = {
+      ...form,
+      description: plainExcerpt,
+      longDescription: fullDescription,
+      itinerary,
+      price: Number(form.price),
+      originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
+      tags: form.tags.split(",").map((t: string) => t.trim()).filter(Boolean),
+      inclusions: form.inclusions.split("\n").filter(Boolean),
+      exclusions: form.exclusions.split("\n").filter(Boolean)
     };
 
     try {
@@ -431,8 +481,80 @@ function DestinationsSection() {
             <FormField label="Original Price (₹)" name="originalPrice" type="number" value={form.originalPrice} onChange={handleChange} placeholder="e.g. 55000" />
             <FormField label="Duration" name="duration" value={form.duration} onChange={handleChange} error={formErrors.duration} required placeholder="e.g. 5 Days / 4 Nights" />
           </div>
-          <FormField label="Description" name="description" type="textarea" value={form.description} onChange={handleChange} error={formErrors.description} required rows={3} placeholder="Brief description of the destination" />
-          <RichTextEditor label="Long Description (headings supported)" name="longDescription" value={form.longDescription} onChange={handleChange} rows={6} placeholder="Detailed description — select text and tap H1/H2/H3 for big/medium/small headings" />
+          <div>
+            <RichTextEditor
+              label="Description (headings supported)"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              rows={8}
+              placeholder="Write everything here — select text and tap H1 for big, H2 for medium, H3 for small headings. Day-wise plan goes in the Itinerary section below."
+            />
+            {formErrors.description && (
+              <p className="-mt-2 mb-2 text-xs text-red-500">{formErrors.description}</p>
+            )}
+            <p className="-mt-1 mb-2 text-[11px] text-navy-400">
+              Cards and previews automatically use the first ~200 characters as plain text.
+            </p>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-navy-700">
+                Day-wise Itinerary <span className="text-navy-400 font-normal">(shows as “Your Itinerary” on the site)</span>
+              </label>
+              <button
+                type="button"
+                onClick={addDay}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-accent bg-accent/10 hover:bg-accent/20 rounded-lg transition-colors"
+              >
+                <Plus size={13} /> Add Day
+              </button>
+            </div>
+            {(form.itinerary || []).length === 0 && (
+              <p className="text-xs text-navy-400 bg-cream/60 border border-cream-dark/20 rounded-lg px-3 py-2.5">
+                No days yet — tap “Add Day” to build the day-wise plan. Each day appears as its own card on the website, one below the other.
+              </p>
+            )}
+            {(form.itinerary || []).map((d: any, i: number) => (
+              <div key={i} className="border border-cream-dark/20 rounded-xl p-4 mb-3 bg-cream/40">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-8 h-8 rounded-full bg-accent/15 text-accent font-bold text-sm flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeDay(i)}
+                    className="p-1.5 rounded-lg text-navy-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="Remove day"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+                <FormField label="Day Title" name={`day-title-${i}`} value={d.title} onChange={(e) => updateDay(i, "title", e.target.value)} placeholder={`e.g. Arrival in ${form.title || "City"}`} />
+                <RichTextEditor label="Day Details" name={`day-desc-${i}`} value={d.description} onChange={(e: any) => updateDay(i, "description", e.target.value)} rows={3} placeholder="What happens this day — headings supported" />
+                <FormField label="Activities (one per line)" name={`day-activities-${i}`} type="textarea" value={d.activitiesText} onChange={(e) => updateDay(i, "activitiesText", e.target.value)} rows={2} placeholder={"Morning sightseeing\nEvening cruise"} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FormField label="Stay / Accommodation" name={`day-stay-${i}`} value={d.accommodation} onChange={(e) => updateDay(i, "accommodation", e.target.value)} placeholder="Hotel name" />
+                  <div>
+                    <span className="block text-sm font-medium text-navy-700 mb-1.5">Meals Included</span>
+                    <div className="flex items-center gap-4 py-2">
+                      {(["breakfast", "lunch", "dinner"] as const).map((m) => (
+                        <label key={m} className="flex items-center gap-1.5 cursor-pointer text-sm text-navy-700 capitalize">
+                          <input
+                            type="checkbox"
+                            checked={!!d[m]}
+                            onChange={(e) => updateDay(i, m, e.target.checked)}
+                            className="w-4 h-4 rounded border-cream-dark/30 text-accent focus:ring-accent/40 accent-accent"
+                          />
+                          {m === "breakfast" ? "Breakfast" : m === "lunch" ? "Lunch" : "Dinner"}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
           <FormField label="Tags (comma separated)" name="tags" value={form.tags} onChange={handleChange} placeholder="e.g. beach, luxury, adventure" />
           <FormField label="Inclusions (one per line)" name="inclusions" type="textarea" value={form.inclusions} onChange={handleChange} rows={3} placeholder="Hotel accommodation&#10;Airport transfers&#10;Daily breakfast" />
           <FormField label="Exclusions (one per line)" name="exclusions" type="textarea" value={form.exclusions} onChange={handleChange} rows={3} placeholder="Flight tickets&#10;Personal expenses&#10;Travel insurance" />
