@@ -21,6 +21,7 @@ interface DestinationData {
   location: string;
   image: string;
   price: number;
+  originalPrice?: number;
   rating: number;
   reviewCount: number;
   duration: string;
@@ -113,8 +114,9 @@ export default function DestinationsClient() {
         title: d.title,
         slug: d.slug,
         location: d.location,
-        image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
-        price: d.price,
+            image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
+            price: d.price,
+            originalPrice: d.originalPrice,
         rating: d.rating || 4.5,
         reviewCount: d.reviewCount || 10,
         duration: d.duration,
@@ -337,6 +339,7 @@ export default function DestinationsClient() {
                       rating={dest.rating}
                       duration={dest.duration}
                       price={dest.price}
+                      originalPrice={dest.originalPrice}
                       type={dest.type}
                       href={dest.slug ? `/destinations/${dest.slug}` : `/destinations`}
                     />

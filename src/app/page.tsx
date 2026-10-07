@@ -247,6 +247,7 @@ const WHY_CHOOSE_US = [
 const INTERNATIONAL = [
   {
     name: "Dubai",
+    slug: "dubai",
     image:
       "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&h=400&fit=crop",
     price: "₹54,999",
@@ -254,6 +255,7 @@ const INTERNATIONAL = [
   },
   {
     name: "Thailand",
+    slug: "thailand",
     image:
       "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&h=400&fit=crop",
     price: "₹32,999",
@@ -261,6 +263,7 @@ const INTERNATIONAL = [
   },
   {
     name: "Singapore",
+    slug: "singapore",
     image:
       "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&h=400&fit=crop",
     price: "₹45,999",
@@ -268,6 +271,7 @@ const INTERNATIONAL = [
   },
   {
     name: "Vietnam",
+    slug: "vietnam",
     image:
       "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600&h=400&fit=crop",
     price: "₹36,999",
@@ -275,6 +279,7 @@ const INTERNATIONAL = [
   },
   {
     name: "Malaysia",
+    slug: "malaysia",
     image:
       "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=600&h=400&fit=crop",
     price: "₹38,999",
@@ -282,6 +287,7 @@ const INTERNATIONAL = [
   },
   {
     name: "Europe",
+    slug: "europe",
     image:
       "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=600&h=400&fit=crop",
     price: "₹1,25,000",
@@ -289,6 +295,7 @@ const INTERNATIONAL = [
   },
   {
     name: "Maldives",
+    slug: "maldives",
     image:
       "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&h=400&fit=crop",
     price: "₹85,999",
@@ -296,6 +303,7 @@ const INTERNATIONAL = [
   },
   {
     name: "Sri Lanka",
+    slug: "sri-lanka",
     image:
       "https://images.unsplash.com/photo-1559333086-b0a1a1b7f2e1?w=600&h=400&fit=crop",
     price: "₹28,999",
@@ -513,6 +521,7 @@ export default function Home() {
         location: d.location,
         image: d.images?.[0] || d.image || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
         price: d.price,
+        originalPrice: d.originalPrice,
         rating: d.rating || 4.5,
         reviewCount: d.reviewCount || 10,
         duration: d.duration,
@@ -635,13 +644,15 @@ export default function Home() {
                   className="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-500"
                 >
                   <div className="relative h-56 overflow-hidden">
-                    <Image
-                      src={dest.image}
-                      alt={dest.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
+                    <Link href={`/destinations/${dest.slug}`} className="block h-full">
+                      <Image
+                        src={dest.image}
+                        alt={dest.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    </Link>
                     <div className="absolute inset-0 bg-gradient-to-t from-accent/40 via-gold/15 to-transparent" />
                     <div className="absolute bottom-4 left-4 right-4 z-10">
                       <h3 className="text-primary font-heading text-xl font-bold">
@@ -654,9 +665,12 @@ export default function Home() {
                     <span className="text-primary font-heading font-bold text-lg">
                       {dest.price}
                     </span>
-                    <span className="text-accent text-xs font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                    <Link
+                      href={`/destinations/${dest.slug}`}
+                      className="text-accent text-xs font-medium flex items-center gap-1 group-hover:gap-2 transition-all"
+                    >
                       Explore <ArrowRight className="w-3 h-3" />
-                    </span>
+                    </Link>
                   </div>
                 </motion.div>
               </AnimatedSection>

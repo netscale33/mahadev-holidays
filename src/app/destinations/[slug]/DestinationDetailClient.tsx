@@ -73,6 +73,7 @@ interface DetailedDestination {
   category: string;
   type: string;
   price: number;
+  originalPrice?: number;
 }
 
 const ALL_DETAILS: Record<string, DetailedDestination> = {
@@ -880,6 +881,7 @@ export default function DestinationDetailClient() {
                 category: found.category || base0.category,
                 type: found.type || base0.type,
                 price: livePrice,
+                originalPrice: found.originalPrice ?? found.original_price,
               });
               setLoading(false);
               return;
@@ -916,6 +918,7 @@ export default function DestinationDetailClient() {
                 category: found.category,
                 type: found.type || "Nature",
                 price: found.price,
+                originalPrice: found.originalPrice,
               };
               setDest(formatted);
               setLoading(false);
@@ -968,6 +971,7 @@ export default function DestinationDetailClient() {
             category: d.category,
             type: d.type || "Nature",
             price: d.price,
+            originalPrice: d.originalPrice,
           };
           setDest(formatted);
         }
@@ -1075,7 +1079,10 @@ export default function DestinationDetailClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <SectionHeader tag="Overview" title={dest.name} subtitle={dest.description} centered={false} />
-            <p className="text-primary/90 leading-relaxed mb-6">{dest.longDescription}</p>
+            <div
+              className="rich-text text-primary/90 leading-relaxed mb-6"
+              dangerouslySetInnerHTML={{ __html: dest.longDescription }}
+            />
             <div className="grid grid-cols-2 gap-3">
               {dest.highlights.map((h, i) => (
                 <div key={i} className="flex items-start gap-2.5">
@@ -1224,28 +1231,36 @@ export default function DestinationDetailClient() {
       </section>
 
       <Footer />
+      <div className="h-[76px]" />
 
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-lg border-t border-gold/10 px-4 py-3 shadow-lg"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gold/10 px-4 py-3 shadow-lg"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div>
-            <p className="text-accent font-heading font-bold text-lg">₹{dest.price.toLocaleString("en-IN")}</p>
+            {dest.originalPrice && Number(dest.originalPrice) > Number(dest.price) ? (
+              <>
+                <p className="text-primary/40 text-xs line-through font-semibold">₹{Number(dest.originalPrice).toLocaleString("en-IN")}</p>
+                <p className="text-accent font-heading font-bold text-lg md:text-2xl">₹{dest.price.toLocaleString("en-IN")}</p>
+              </>
+            ) : (
+              <p className="text-accent font-heading font-bold text-lg md:text-2xl">₹{dest.price.toLocaleString("en-IN")}</p>
+            )}
             <p className="text-primary/40 text-xs">per person</p>
           </div>
-          <div className="flex items-center gap-2">
-            <a href="tel:+919328151481" className="w-10 h-10 rounded-full border border-primary/20 flex items-center justify-center text-primary/70 hover:text-accent hover:border-accent/30 transition-all">
-              <Phone className="w-4 h-4" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <a href="tel:+919328151481" className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-primary/20 flex items-center justify-center text-primary/70 hover:text-accent hover:border-accent/30 transition-all">
+              <Phone className="w-4 h-4 md:w-5 md:h-5" />
             </a>
             <a
               href={`https://wa.me/919328151481?text=Hello%20Mahadev%20Holidays%2C%20I%27m%20interested%20in%20${encodeURIComponent(dest.name)}.%20Please%20share%20details%20about%20pricing%20and%20availability.`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full text-sm transition-all shadow-lg"
+              className="inline-flex items-center gap-2 px-6 md:px-10 py-2.5 md:py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full text-sm md:text-base transition-all shadow-lg"
             >
-              <MessageCircle className="w-4 h-4" />
+              <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
               Book Now
             </a>
           </div>

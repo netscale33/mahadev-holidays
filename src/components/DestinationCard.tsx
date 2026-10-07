@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Star, MapPin, Clock, ArrowUpRight } from "lucide-react";
+import { Star, MapPin, Clock, ArrowUpRight, MessageCircle } from "lucide-react";
 
 interface DestinationCardProps {
   id: string;
@@ -13,6 +13,7 @@ interface DestinationCardProps {
   rating: number;
   duration: string;
   price: number;
+  originalPrice?: number;
   type: string;
   href: string;
 }
@@ -34,9 +35,14 @@ export default function DestinationCard({
   rating,
   duration,
   price,
+  originalPrice,
   type,
   href,
 }: DestinationCardProps) {
+  const waUrl = `https://wa.me/919328151481?text=${encodeURIComponent(
+    `Hello Mahadev Holidays! 🙏 I'm interested in the ${title} package. Please share details about pricing and availability.`
+  )}`;
+  const hasOffer = originalPrice != null && Number(originalPrice) > Number(price);
   return (
     <motion.div
       whileHover={{ y: -6 }}
@@ -63,7 +69,12 @@ export default function DestinationCard({
             </span>
           </div>
 
-          <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
+          <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-right leading-tight">
+            {hasOffer && (
+              <span className="block text-primary/40 text-[11px] line-through font-semibold">
+                ₹{Number(originalPrice).toLocaleString("en-IN")}
+              </span>
+            )}
             <span className="text-primary font-bold text-sm">
               ₹{price.toLocaleString("en-IN")}
             </span>
@@ -110,7 +121,7 @@ export default function DestinationCard({
             </span>
           </div>
 
-          {/* Mobile-only always-visible CTA */}
+          {/* Mobile-only always-visible details link */}
           <div className="sm:hidden pt-1">
             <span className="inline-flex items-center gap-1 text-accent text-xs font-bold">
               View Details <ArrowUpRight className="w-3 h-3" />
@@ -118,6 +129,19 @@ export default function DestinationCard({
           </div>
         </div>
       </Link>
+
+      <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+        <a
+          href={waUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full text-sm transition-all shadow-md active:scale-[0.98] touch-manipulation"
+        >
+          <MessageCircle className="w-4 h-4" />
+          Book Now
+        </a>
+      </div>
     </motion.div>
   );
 }

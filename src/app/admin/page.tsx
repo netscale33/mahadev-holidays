@@ -19,6 +19,7 @@ import FormField from "@/components/admin/FormField";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import StatsCard from "@/components/admin/StatsCard";
 import ImageUploader from "@/components/admin/ImageUploader";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import StatusBadge from "@/components/admin/StatusBadge";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -372,7 +373,22 @@ function DestinationsSection() {
       ),
     },
     { key: "location", label: "Location", sortable: true },
-    { key: "price", label: "Price", sortable: true, render: (row: any) => <span className="font-medium">{formatPrice(row.price)}</span> },
+    { key: "price", label: "Price", sortable: true, render: (row: any) => {
+      const orig = Number(row.originalPrice || 0);
+      const hasOffer = orig > Number(row.price || 0);
+      const off = hasOffer ? Math.round((1 - Number(row.price) / orig) * 100) : 0;
+      return (
+        <span className="font-medium leading-tight block">
+          {hasOffer && (
+            <span className="block text-xs text-primary-400 line-through">{formatPrice(orig)}</span>
+          )}
+          {formatPrice(row.price)}
+          {hasOffer && (
+            <span className="ml-1.5 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 rounded-full px-1.5 py-0.5">{off}% off</span>
+          )}
+        </span>
+      );
+    } },
     { key: "category", label: "Category", sortable: true, render: (row: any) => <StatusBadge status={row.category} /> },
     {
       key: "isAvailable", label: "Status",
@@ -416,7 +432,7 @@ function DestinationsSection() {
             <FormField label="Duration" name="duration" value={form.duration} onChange={handleChange} error={formErrors.duration} required placeholder="e.g. 5 Days / 4 Nights" />
           </div>
           <FormField label="Description" name="description" type="textarea" value={form.description} onChange={handleChange} error={formErrors.description} required rows={3} placeholder="Brief description of the destination" />
-          <FormField label="Long Description" name="longDescription" type="textarea" value={form.longDescription} onChange={handleChange} rows={5} placeholder="Detailed description of the destination" />
+          <RichTextEditor label="Long Description (headings supported)" name="longDescription" value={form.longDescription} onChange={handleChange} rows={6} placeholder="Detailed description — select text and tap H1/H2/H3 for big/medium/small headings" />
           <FormField label="Tags (comma separated)" name="tags" value={form.tags} onChange={handleChange} placeholder="e.g. beach, luxury, adventure" />
           <FormField label="Inclusions (one per line)" name="inclusions" type="textarea" value={form.inclusions} onChange={handleChange} rows={3} placeholder="Hotel accommodation&#10;Airport transfers&#10;Daily breakfast" />
           <FormField label="Exclusions (one per line)" name="exclusions" type="textarea" value={form.exclusions} onChange={handleChange} rows={3} placeholder="Flight tickets&#10;Personal expenses&#10;Travel insurance" />
