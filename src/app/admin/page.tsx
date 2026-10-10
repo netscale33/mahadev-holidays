@@ -210,7 +210,7 @@ function DestinationsSection() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ title: "", slug: "", location: "", description: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", isAvailable: true, isFeatured: false, images: [], itinerary: [] });
+  const [form, setForm] = useState<any>({ title: "", slug: "", location: "", description: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", mainImage: "", images: [], itinerary: [] });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => { fetchDestinations(); }, []);
@@ -280,14 +280,14 @@ function DestinationsSection() {
 
   function openAddModal() {
     setEditingId(null);
-    setForm({ title: "", slug: "", location: "", description: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", isAvailable: true, isFeatured: false, images: [], itinerary: [] });
+    setForm({ title: "", slug: "", location: "", description: "", price: "", originalPrice: "", duration: "", category: "", tags: "", inclusions: "", exclusions: "", mainImage: "", images: [], itinerary: [] });
     setFormErrors({});
     setModalOpen(true);
   }
 
   function openEditModal(dest: any) {
     setEditingId(dest.id);
-    setForm({ title: dest.title || "", slug: dest.slug || "", location: dest.location || "", description: dest.longDescription || dest.longdescription || dest.description || "", price: String(dest.price || ""), originalPrice: String(dest.originalPrice || dest.originalprice || ""), duration: dest.duration || "", category: dest.category || "", tags: Array.isArray(dest.tags) ? dest.tags.join(", ") : "", inclusions: Array.isArray(dest.inclusions) ? dest.inclusions.join("\n") : "", exclusions: Array.isArray(dest.exclusions) ? dest.exclusions.join("\n") : "", isAvailable: dest.isAvailable ?? dest.isavailable ?? true, isFeatured: dest.isFeatured ?? dest.isfeatured ?? false, images: dest.images || (dest.image ? [dest.image] : []), itinerary: Array.isArray(dest.itinerary) ? dest.itinerary.map(toEditableDay) : [] });
+    setForm({ title: dest.title || "", slug: dest.slug || "", location: dest.location || "", description: dest.longDescription || dest.longdescription || dest.description || "", price: String(dest.price || ""), originalPrice: String(dest.originalPrice || dest.originalprice || ""), duration: dest.duration || "", category: dest.category || "", tags: Array.isArray(dest.tags) ? dest.tags.join(", ") : "", inclusions: Array.isArray(dest.inclusions) ? dest.inclusions.join("\n") : "", exclusions: Array.isArray(dest.exclusions) ? dest.exclusions.join("\n") : "", mainImage: dest.images?.[0] || dest.image || "", images: Array.isArray(dest.images) ? dest.images.slice(1) : [], itinerary: Array.isArray(dest.itinerary) ? dest.itinerary.map(toEditableDay) : [] });
     setFormErrors({});
     setModalOpen(true);
   }
@@ -330,6 +330,7 @@ function DestinationsSection() {
       ...form,
       description: plainExcerpt,
       longDescription: fullDescription,
+      images: [form.mainImage, ...(form.images || [])].filter(Boolean),
       itinerary,
       price: Number(form.price),
       originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
@@ -390,26 +391,59 @@ function DestinationsSection() {
     setStatusUpdating(null);
   }
 
-  function handleImageUpload(files: File[]) {
+  async function uploadToSupabase(files: File[]): Promise<string[]> {
+    const token = localStorage.getItem("admin_token");
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const urls: string[] = [];
+    for (const f of files) {
+      const formData = new FormData();
+      formData.append("file", f);
+      const res = await fetch("/api/upload", { method: "POST", headers, body: formData });
+      if (!res.ok) throw new Error("upload failed");
+      const data = await res.json();
+      urls.push(data.url);
+    }
+    return urls;
+  }
+
+  function handleMainUpload(files: File[]) {
+    if (!files.length) return;
     (async () => {
       try {
-        const token = localStorage.getItem("admin_token");
-        const headers: Record<string, string> = {};
-        if (token) headers.Authorization = `Bearer ${token}`;
-        const urls: string[] = [];
-        for (const f of files) {
-          const formData = new FormData();
-          formData.append("file", f);
-          const res = await fetch("/api/upload", { method: "POST", headers, body: formData });
-          if (!res.ok) throw new Error("upload failed");
-          const data = await res.json();
-          urls.push(data.url);
-        }
-        setForm((prev: any) => ({ ...prev, images: [...prev.images, ...urls] }));
+        const urls = await uploadToSupabase(files.slice(0, 1));
+        if (urls[0]) setForm((prev: any) => ({ ...prev, mainImage: urls[0] }));
       } catch {
-        setForm((prev: any) => ({ ...prev, images: [...prev.images, ...files.map((f) => URL.createObjectURL(f))] }));
+        setForm((prev: any) => ({ ...prev, mainImage: URL.createObjectURL(files[0]) }));
       }
     })();
+  }
+
+  function handleOtherUpload(files: File[]) {
+    if (!files.length) return;
+    (async () => {
+      try {
+        const urls = await uploadToSupabase(files);
+        setForm((prev: any) => ({ ...prev, images: [...(prev.images || []), ...urls] }));
+      } catch {
+        setForm((prev: any) => ({ ...prev, images: [...(prev.images || []), ...files.map((f) => URL.createObjectURL(f))] }));
+      }
+    })();
+  }
+
+  function removeOtherImage(index: number) {
+    setForm((prev: any) => ({ ...prev, images: (prev.images || []).filter((_: any, i: number) => i !== index) }));
+  }
+
+  function setAsFront(index: number) {
+    setForm((prev: any) => {
+      const others = [...(prev.images || [])];
+      const [picked] = others.splice(index, 1);
+      const next: string[] = [];
+      if (prev.mainImage) next.push(prev.mainImage);
+      next.push(...others);
+      return { ...prev, mainImage: picked, images: next };
+    });
   }
 
   const columns = [
@@ -559,18 +593,55 @@ function DestinationsSection() {
           <FormField label="Inclusions (one per line)" name="inclusions" type="textarea" value={form.inclusions} onChange={handleChange} rows={3} placeholder="Hotel accommodation&#10;Airport transfers&#10;Daily breakfast" />
           <FormField label="Exclusions (one per line)" name="exclusions" type="textarea" value={form.exclusions} onChange={handleChange} rows={3} placeholder="Flight tickets&#10;Personal expenses&#10;Travel insurance" />
           <div>
-            <label className="block text-sm font-medium text-primary-700 mb-1.5">Images</label>
-            <ImageUploader onUpload={handleImageUpload} maxFiles={10} />
+            <label className="block text-sm font-medium text-primary-700 mb-1.5">
+              Front / Main Photo <span className="text-primary-400 font-normal">(cover of this destination)</span>
+            </label>
+            {form.mainImage ? (
+              <div className="relative w-full max-w-xs aspect-[4/3] rounded-xl overflow-hidden border border-cream-dark/20 mb-2">
+                <img src={form.mainImage} alt="Front" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setForm((prev: any) => ({ ...prev, mainImage: "" }))}
+                  className="absolute top-2 right-2 px-3 py-1.5 rounded-lg bg-black/60 text-white text-xs font-semibold hover:bg-red-500 transition-colors touch-manipulation"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-primary-400 mb-2">No front photo yet — upload one below.</p>
+            )}
+            <ImageUploader onUpload={handleMainUpload} maxFiles={1} />
           </div>
-          <div className="flex items-center gap-6 pt-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="isAvailable" checked={form.isAvailable} onChange={handleChange} className="w-4 h-4 rounded border-cream-dark/30 text-accent focus:ring-accent/40 accent-accent" />
-              <span className="text-sm text-primary-700">Available</span>
+          <div>
+            <label className="block text-sm font-medium text-primary-700 mb-1.5">
+              Other Photos <span className="text-primary-400 font-normal">(gallery of the same destination)</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={handleChange} className="w-4 h-4 rounded border-cream-dark/30 text-accent focus:ring-accent/40 accent-accent" />
-              <span className="text-sm text-primary-700">Featured</span>
-            </label>
+            {(form.images || []).length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-2">
+                {(form.images || []).map((src: string, i: number) => (
+                  <div key={`${src}-${i}`} className="relative aspect-square rounded-xl overflow-hidden border border-cream-dark/20">
+                    <img src={src} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 flex gap-1.5 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                      <button
+                        type="button"
+                        onClick={() => setAsFront(i)}
+                        className="flex-1 py-1.5 rounded-lg bg-white/90 text-navy-800 text-[11px] font-bold hover:bg-white transition-colors touch-manipulation"
+                      >
+                        Set front
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeOtherImage(i)}
+                        className="flex-1 py-1.5 rounded-lg bg-red-500/90 text-white text-[11px] font-bold hover:bg-red-600 transition-colors touch-manipulation"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <ImageUploader onUpload={handleOtherUpload} maxFiles={10} />
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-cream-dark/10">
             <button onClick={() => setModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-primary-700 bg-cream rounded-lg hover:bg-cream-dark/30 transition-colors">Cancel</button>
