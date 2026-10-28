@@ -1027,31 +1027,33 @@ export default function DestinationDetailClient() {
       <Header />
       <ScrollToTop />
 
-      <section className="relative h-[55vh] md:h-[75vh] min-h-[420px] overflow-hidden">
-        <Image src={dest.heroImage} alt={dest.name} fill className="object-cover" priority />
-        <div className="absolute inset-x-0 bottom-0 h-2/5 md:h-1/2 bg-gradient-to-t from-primary/85 via-primary/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 px-6 pb-20 md:px-12 md:pb-24">
-          <div className="max-w-7xl mx-auto">
-            <nav className="flex items-center gap-2 text-white/70 text-xs mb-4">
-              {breadcrumbs.map((item, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  {i > 0 && <ChevronRight className="w-3 h-3" />}
-                  {item.href ? <Link href={item.href} className="hover:text-gold transition-colors">{item.label}</Link> : <span className="text-white/90">{item.label}</span>}
-                </span>
-              ))}
-            </nav>
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-white mb-2">
-              {dest.name}
-            </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-white/85 text-lg md:text-xl font-light">
-              {dest.tagline}
-            </motion.p>
-          </div>
-        </div>
-      </section>
+      {/* Hero photo — kept completely clear, no text or overlay on top of it */}
+      <div className="pt-20">
+        <section className="relative w-full h-[45vh] md:h-[65vh] min-h-[260px] max-h-[680px] overflow-hidden">
+          <Image src={dest.heroImage} alt={dest.name} fill className="object-cover" priority />
+        </section>
 
-      <section className="max-w-7xl mx-auto px-6 -mt-10 relative z-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+        {/* Titles and breadcrumb sit below the image, never over it */}
+        <div className="max-w-7xl mx-auto px-6 pt-7 md:pt-9">
+          <nav className="flex flex-wrap items-center gap-2 text-primary/55 text-xs mb-3">
+            {breadcrumbs.map((item, i) => (
+              <span key={i} className="flex items-center gap-2">
+                {i > 0 && <ChevronRight className="w-3 h-3 text-primary/40" />}
+                {item.href ? <Link href={item.href} className="hover:text-accent transition-colors">{item.label}</Link> : <span className="text-primary/85">{item.label}</span>}
+              </span>
+            ))}
+          </nav>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-primary mb-2">
+            {dest.name}
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-primary/65 text-lg md:text-xl font-light">
+            {dest.tagline}
+          </motion.p>
+        </div>
+      </div>
+
+      <section className="max-w-7xl mx-auto px-6 mt-7 md:mt-9 relative z-10">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-2xl shadow-xl border border-primary/5 p-6 md:p-8">
           <div className="flex flex-wrap items-center gap-6 text-sm">
             <div className="flex items-center gap-2 text-primary/85">
               <MapPin className="w-4 h-4 text-gold" />
