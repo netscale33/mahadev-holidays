@@ -1027,30 +1027,30 @@ export default function DestinationDetailClient() {
       <Header />
       <ScrollToTop />
 
-      <section className="relative h-[50vh] md:h-[70vh] min-h-[400px] overflow-hidden">
+      <section className="relative h-[55vh] md:h-[75vh] min-h-[420px] overflow-hidden">
         <Image src={dest.heroImage} alt={dest.name} fill className="object-cover" priority />
-        <div className="absolute inset-0 bg-gradient-to-t from-accent/20 via-gold/15 to-secondary/10" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12">
+        <div className="absolute inset-x-0 bottom-0 h-2/5 md:h-1/2 bg-gradient-to-t from-primary/85 via-primary/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-20 md:px-12 md:pb-24">
           <div className="max-w-7xl mx-auto">
-            <nav className="flex items-center gap-2 text-primary/50 text-xs mb-4">
+            <nav className="flex items-center gap-2 text-white/70 text-xs mb-4">
               {breadcrumbs.map((item, i) => (
                 <span key={i} className="flex items-center gap-2">
                   {i > 0 && <ChevronRight className="w-3 h-3" />}
-                  {item.href ? <Link href={item.href} className="hover:text-accent transition-colors">{item.label}</Link> : <span className="text-primary/80">{item.label}</span>}
+                  {item.href ? <Link href={item.href} className="hover:text-gold transition-colors">{item.label}</Link> : <span className="text-white/90">{item.label}</span>}
                 </span>
               ))}
             </nav>
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-primary mb-2">
+            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-white mb-2">
               {dest.name}
             </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-primary/60 text-lg md:text-xl font-light">
+            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-white/85 text-lg md:text-xl font-light">
               {dest.tagline}
             </motion.p>
           </div>
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 -mt-16 relative z-10">
+      <section className="max-w-7xl mx-auto px-6 -mt-10 relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
           <div className="flex flex-wrap items-center gap-6 text-sm">
             <div className="flex items-center gap-2 text-primary/85">
